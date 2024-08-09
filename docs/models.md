@@ -8,8 +8,8 @@ Credentials object:
     "auth_creds": {
       "type": "object",
       "properties": {
-        "usr": {"type":"string"},
-        "passwd": {"type":"string"}
+        "user": {"type":"string"},
+        "passwod": {"type":"string"}
       }
     }
   }
@@ -68,5 +68,5 @@ Biscuit token object
       }
     }
   }
-}  
+}
 ```

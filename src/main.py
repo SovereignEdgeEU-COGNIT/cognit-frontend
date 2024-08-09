@@ -1,11 +1,19 @@
 from fastapi import FastAPI, status, HTTPException, Header
 from pydantic import BaseModel
+from typing import Annotated
+import uvicorn
+
+import cognit_conf as api_conf
+import cognit_auth as auth
+
+conf = api_conf.load()
+auth.ONE_XMLRPC = conf['one_xmlrpc']
 
 app = FastAPI()
 
 class Credentials(BaseModel):
-    usr: str
-    passwd: str
+    user: str
+    password: str
 
 class AppRequirements(BaseModel):
     requirement: str
@@ -22,14 +30,14 @@ class BiscuitToken(BaseModel):
 
 @app.post("/v1/authenticate", status_code=status.HTTP_201_CREATED)
 async def authenticate(credentials: Credentials) -> BiscuitToken:
-    if credentials.usr != credentials.passwd:
+    if not auth.is_user_valid(credentials.user, credentials.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    token = BiscuitToken()
+    token = auth.generate_biscuit(credentials.user)
     return token
 
 @app.post("/v1/app_requirements", status_code=status.HTTP_200_OK)
-async def app_req_upload(requirements: AppRequirements) -> int:
+async def app_req_upload(requirements: AppRequirements, header: Annotated[str | None, Header()] = None) -> int:
     app_req_id = 69
     return app_req_id
 
@@ -49,3 +57,6 @@ async def app_req_get(id: int) -> AppRequirements:
 async def edge_cluster_ip_get() -> str:
     ecf = EdgeClusterFrontend()
     return ecf.ip_address
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host=conf['host'], port=conf['port'], reload=True)
