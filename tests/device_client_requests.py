@@ -18,8 +18,8 @@ token = response.json()
 
 uri = 'http://localhost:1338/v1/app_requirements'
 body = {
-    'requirement': 'cpu = amd',
-    'scheduling_policy': 'fast'
+    'REQUIREMENT': 'cpu = amd',
+    'SCHEDULING_POLICY': 'fast'
 }
 headers = {
     "token": token
@@ -36,8 +36,8 @@ print(response.json())
 
 # update app requirement
 body = {
-    'requirement': 'cpu = intel',
-    'scheduling_policy': 'slow'
+    'REQUIREMENT': 'cpu = intel',
+    'SCHEDULING_POLICY': 'slow'
 }
 
 response = requests.put(uri, data=json.dumps(body), headers=headers)

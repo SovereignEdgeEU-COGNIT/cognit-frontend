@@ -26,19 +26,18 @@ def app_requirement_create(one: pyone.OneServer, app_requirement: dict) -> int :
 
 
 def app_requirement_get(one: pyone.OneServer, document_id: int):
-    document = one.document.info(document_id).TEMPLATE
+    document = one.document.info(document_id)
 
     if int(document.TYPE) != DOCUMENT_TYPES['APP_REQUIREMENT']:
         raise
 
-    return dict(document)
+    return dict(document.TEMPLATE)
 
 
 def app_requirement_update(one: pyone.OneServer, document_id: int, app_requirement: dict) -> int:
     app_requirement_get(one, document_id)
 
-    document_id = one.document.update(app_requirement, 0)
-    return document_id
+    one.document.update(document_id, app_requirement, 0)
 
 
 

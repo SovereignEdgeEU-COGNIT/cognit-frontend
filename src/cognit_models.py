@@ -6,14 +6,14 @@ class Credentials(BaseModel):
 
 
 class AppRequirements(BaseModel):
-    requirement: str
-    scheduling_policy: str
+    REQUIREMENT: str
+    SCHEDULING_POLICY: str
 
 
 class EdgeClusterFrontend(BaseModel):
-    id: int
-    name: str
-    hosts: list[int]
-    datastores: list[int]
-    vnets: list[int]
-    template: dict
+    ID: int
+    NAME: str
+    HOSTS: list[int]
+    DATASTORES: list[int]
+    VNETS: list[int]
+    TEMPLATE: dict

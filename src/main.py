@@ -51,7 +51,7 @@ async def app_req_update(
     one.app_requirement_update(client, id, requirements.model_dump())
 
 
-@app.get("/v1/app_app_requirements/{id}", status_code=status.HTTP_200_OK, response_model=AppRequirements)
+@app.get("/v1/app_requirements/{id}", status_code=status.HTTP_200_OK, response_model=AppRequirements)
 async def app_req_get(
     id: Annotated[int, Path(title="Document ID of the App Requirement")],
     token: Annotated[str | None, Header()] = None
