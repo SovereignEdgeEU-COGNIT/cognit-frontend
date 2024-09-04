@@ -1,0 +1,4 @@
+{
+    "requirement": "hypervisor = KVM",
+    "scheduling_policy": "ENERGY"
+}

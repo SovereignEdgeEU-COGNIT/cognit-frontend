@@ -4,8 +4,9 @@ import os
 PATH = "/etc/cognit-frontend.conf"
 DEFAULT = {
     'host': '0.0.0.0',
-    'port': 1337,
+    'port': 1338,
     'one_xmlrpc': 'http://localhost:2633/RPC2',
+    'ai_orchestrator_endpoint': 'http://localhost:4567',
     'log_level': 'info'
 }
 
@@ -32,3 +33,4 @@ HOST = config['host']
 PORT = config['port']
 ONE_XMLRPC = config['one_xmlrpc']
 LOG_LEVEL = config['log_level']
+AI_ORCHESTRATOR_ENDPOINT = config['ai_orchestrator_endpoint']
