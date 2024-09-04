@@ -22,6 +22,7 @@ Create virtualenv
 ```bash
 cd /path/to/cognit-frontend
 python -m venv venv
+pip install -r requirements.txt
 ```
 
 Load the virtual env (Bash)
