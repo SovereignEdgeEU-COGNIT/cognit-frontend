@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from fastapi import FastAPI, status, HTTPException, Header, Path
+from fastapi import FastAPI, status, HTTPException, Header, Path, Depends
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from typing import Annotated, Any
 import uvicorn
 import re
@@ -10,29 +11,29 @@ import json
 import cognit_conf as conf
 import biscuit_token as auth
 import opennebula as one
-from cognit_models import Credentials, AppRequirements, EdgeClusterFrontend
+from cognit_models import AppRequirements, EdgeClusterFrontend, ExecSyncParams
 
 one.ONE_XMLRPC = conf.ONE_XMLRPC
 
-app = FastAPI(title='Cognit Frontend')
+# TODO: Update design doc
 
-# TODO: Why not use basic auth and send the credentials on the header ?
+app = FastAPI(title='Cognit Frontend', version='0.1.0')
+security = HTTPBasic()
+
+
 @app.post("/v1/authenticate", status_code=status.HTTP_201_CREATED)
-async def authenticate(credentials: Credentials) -> str:
-    if not one.authenticate(credentials.user, credentials.password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+async def authenticate(credentials: Annotated[HTTPBasicCredentials, Depends(security)]) -> str:
+    one.authenticate(credentials.username, credentials.password)
 
-    token = auth.generate_token(credentials.user, credentials.password)
+    token = auth.generate_token(credentials.username, credentials.password)
     return token
 
 
-# TODO: There is no app requirement deletion call in the design doc
 @app.post("/v1/app_requirements", status_code=status.HTTP_200_OK)
 async def app_req_upload(
     requirements: AppRequirements,
     token: Annotated[str | None, Header()] = None
-    ) -> int:
+) -> int:
 
     client = authorize(token)
 
@@ -44,7 +45,7 @@ async def app_req_update(
     id: Annotated[int, Path(title="Document ID of the App Requirement")],
     requirements: AppRequirements,
     token: Annotated[str | None, Header()] = None
-    ):
+):
 
     client = authorize(token)
 
@@ -55,25 +56,35 @@ async def app_req_update(
 async def app_req_get(
     id: Annotated[int, Path(title="Document ID of the App Requirement")],
     token: Annotated[str | None, Header()] = None
-    ) -> Any:
+) -> Any:
 
     client = authorize(token)
 
     return one.app_requirement_get(client, id)
 
-# TODO: Can't we use "/v1/app_app_requirements/{id}/ec_fe" instead if ec_fe is tied to app_requirement_id?
-# TODO: otherwise we need the app_requirement_id on the request body
-@app.get("/v1/ec_fe", status_code=status.HTTP_200_OK, response_model=EdgeClusterFrontend)
-async def edge_cluster_get(
-    app_requirement_id: int,
+
+@app.delete("/v1/app_requirements/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def app_req_get(
+    id: Annotated[int, Path(title="Document ID of the App Requirement")],
     token: Annotated[str | None, Header()] = None
-    ) -> Any:
+):
+
+    client = authorize(token)
+
+    return one.app_requirement_delete(client, id)
+
+
+@app.get("/v1/app_requirements/{id}/ec_fe", status_code=status.HTTP_200_OK, response_model=EdgeClusterFrontend)
+async def edge_cluster_get(
+    id: Annotated[int, Path(title="Document ID of the App Requirement")],
+    token: Annotated[str | None, Header()] = None
+) -> Any:
 
     client = authorize(token)
 
     uri = conf.AI_ORCHESTRATOR_ENDPOINT
     body = {
-        'app_requirement_id': app_requirement_id
+        'app_requirement_id': id
     }
     # TODO: need clarification on how communication flow with AI orchestrator
     response = requests.get(uri, data=json.dumps(body), headers={
@@ -84,6 +95,17 @@ async def edge_cluster_get(
     cluster = one.cluster_get(client, cluster_id)
 
     return cluster
+
+
+@app.post("/v1/daas/upload", status_code=status.HTTP_200_OK, response_model=EdgeClusterFrontend)
+async def function_upload(
+    function: ExecSyncParams,
+    token: Annotated[str | None, Header()] = None
+) -> int:
+
+    client = authorize(token)
+
+    return one.function_create(client, function.model_dump())
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host=conf.HOST, port=conf.PORT,
@@ -102,7 +124,6 @@ def authorize(token) -> list:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
-
     credentials = []
     matchers = [r'user\("([^"]*)"\)', r'password\("([^"]*)"\)']
 
@@ -113,5 +134,3 @@ def authorize(token) -> list:
         credentials.append(value)
 
     return one.create_client(credentials[0], credentials[1])
-
-
