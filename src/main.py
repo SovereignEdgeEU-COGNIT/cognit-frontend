@@ -14,7 +14,7 @@ from cognit_models import Credentials, AppRequirements, EdgeClusterFrontend
 
 one.ONE_XMLRPC = conf.ONE_XMLRPC
 
-app = FastAPI()
+app = FastAPI(title='Cognit Frontend')
 
 # TODO: Why not use basic auth and send the credentials on the header ?
 @app.post("/v1/authenticate", status_code=status.HTTP_201_CREATED)
