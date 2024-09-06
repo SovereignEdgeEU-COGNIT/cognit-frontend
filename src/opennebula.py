@@ -3,12 +3,14 @@ from fastapi import HTTPException, status
 
 ONE_XMLRPC = None  # Set when importing module
 DOCUMENT_TYPES = {
-    'APP_REQUIREMENT' : 1338,
+    'APP_REQUIREMENT': 1338,
     'FUNCTION': 1339
 }
 
+
 def create_client(user: str, password: str) -> pyone.OneServer:
     return pyone.OneServer(ONE_XMLRPC, session=f"{user}:{password}")
+
 
 def authenticate(user: str, password: str) -> bool:
     one = create_client(user, password)
@@ -20,63 +22,70 @@ def authenticate(user: str, password: str) -> bool:
             status_code=status.HTTP_401_UNAUTHORIZED, detail=e)
 
 
-def app_requirement_create(one: pyone.OneServer, app_requirement: dict) -> int :
-    document_id = validate_call(one.document.allocate(
-        app_requirement, 'APP_REQUIREMENT'))
+def app_requirement_create(one: pyone.OneServer, app_requirement: dict) -> int:
+    document_id = validate_call(lambda: one.document.allocate(
+        app_requirement, DOCUMENT_TYPES['APP_REQUIREMENT']))
+
     return document_id
 
 
 def app_requirement_get(one: pyone.OneServer, document_id: int) -> dict:
-    document = document_get(one, document_id, 'APP_REQUIREMENT')
+    document = document_get(
+        one, document_id, 'APP_REQUIREMENT')
     return dict(document.TEMPLATE)
 
 
 def app_requirement_update(one: pyone.OneServer, document_id: int, app_requirement: dict):
     app_requirement_get(one, document_id)
 
-    validate_call(one.document.update(document_id, app_requirement, 0))
+    validate_call(lambda: one.document.update(document_id, app_requirement, 0))
 
 
 def app_requirement_delete(one: pyone.OneServer, document_id: int):
     app_requirement_get(one, document_id)
 
-    validate_call(one.document.delete(document_id))
+    validate_call(lambda: one.document.delete(document_id))
+
 
 def function_create(one: pyone.OneServer,  function: dict) -> int:
     # get list of function documents for this user
     # https://docs.opennebula.io/6.8/integration_and_development/system_interfaces/api.html#one-documentpool-info
-    documents = validate_call(
+    documents = validate_call(lambda:
         one.documentpool.info(-3, -1, -1, DOCUMENT_TYPES['FUNCTION']))
 
     for document in documents.DOCUMENT:
         document_body = dict(document.TEMPLATE)
 
         # do not re-upload already existing functions
-        if document_body['FC_HASH'] == function['HASH']:
+        if document_body['FC_HASH'] == function['FC_HASH']:
             return document.ID
 
-    document_id = validate_call(one.document.allocate(function, 'FUNCTION'))
+    document_id = validate_call(lambda: one.document.allocate(
+        function, DOCUMENT_TYPES['FUNCTION']))
     return document_id
+
 
 def function_get(one: pyone.OneServer, document_id: int) -> dict:
     document = document_get(one, document_id, 'FUNCTION')
     return dict(document.TEMPLATE)
 
+
 def cluster_get(one: pyone.OneServer, cluster_id: int) -> dict:
-    cluster = validate_call(one.cluster.info(cluster_id))
+    cluster = validate_call(lambda: one.cluster.info(cluster_id))
 
     return {
         'ID': cluster_id,
         'NAME': cluster.NAME,
         'HOSTS': cluster.HOST.ID,
         'DATASTORES': cluster.DATASTORES.ID,
-        'VNETS' : cluster.VNETS.ID
+        'VNETS': cluster.VNETS.ID
     }
 
 # Helpers
 
-def document_get(one, document_id, type_str):
-    document = validate_call(one.document.info(document_id))
+
+def document_get(one: pyone.OneServer, document_id: int, type_str: str):
+    document = validate_call(lambda: one.document.info(document_id))
 
     type = DOCUMENT_TYPES[type_str]
 

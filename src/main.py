@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI, status, HTTPException, Header, Path, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from typing import Annotated, Any
+from typing import Annotated, Any, List
 import uvicorn
 import re
 import requests
@@ -30,7 +30,7 @@ async def authenticate(credentials: Annotated[HTTPBasicCredentials, Depends(secu
 
 
 @app.post("/v1/app_requirements", status_code=status.HTTP_200_OK)
-async def app_req_upload(
+async def upload_application_requirements(
     requirements: AppRequirements,
     token: Annotated[str | None, Header()] = None
 ) -> int:
@@ -41,7 +41,7 @@ async def app_req_upload(
 
 
 @app.put("/v1/app_requirements/{id}", status_code=status.HTTP_200_OK)
-async def app_req_update(
+async def update_application_requirements(
     id: Annotated[int, Path(title="Document ID of the App Requirement")],
     requirements: AppRequirements,
     token: Annotated[str | None, Header()] = None
@@ -53,7 +53,7 @@ async def app_req_update(
 
 
 @app.get("/v1/app_requirements/{id}", status_code=status.HTTP_200_OK, response_model=AppRequirements)
-async def app_req_get(
+async def get_application_requirements(
     id: Annotated[int, Path(title="Document ID of the App Requirement")],
     token: Annotated[str | None, Header()] = None
 ) -> Any:
@@ -64,7 +64,7 @@ async def app_req_get(
 
 
 @app.delete("/v1/app_requirements/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def app_req_get(
+async def delete_application_requirements(
     id: Annotated[int, Path(title="Document ID of the App Requirement")],
     token: Annotated[str | None, Header()] = None
 ):
@@ -74,11 +74,11 @@ async def app_req_get(
     return one.app_requirement_delete(client, id)
 
 
-@app.get("/v1/app_requirements/{id}/ec_fe", status_code=status.HTTP_200_OK, response_model=EdgeClusterFrontend)
-async def edge_cluster_get(
+@app.get("/v1/app_requirements/{id}/ec_fe", status_code=status.HTTP_200_OK)
+async def get_edge_cluster_frontends(
     id: Annotated[int, Path(title="Document ID of the App Requirement")],
     token: Annotated[str | None, Header()] = None
-) -> Any:
+) -> List[EdgeClusterFrontend]:
 
     client = authorize(token)
 
@@ -86,19 +86,21 @@ async def edge_cluster_get(
     body = {
         'app_requirement_id': id
     }
-    # TODO: need clarification on how communication flow with AI orchestrator
     response = requests.get(uri, data=json.dumps(body), headers={
                             'Content-Type': 'application/json'})
     body = response.json()
-    cluster_id = body['ID']
 
-    cluster = one.cluster_get(client, cluster_id)
+    cluster_ids = body['ID'] # AI orchestrator returns an array of IDs
+    clusters = []
 
-    return cluster
+    for cluster_id in cluster_ids:
+        clusters.append(one.cluster_get(client, cluster_id))
+
+    return clusters
 
 
-@app.post("/v1/daas/upload", status_code=status.HTTP_200_OK, response_model=EdgeClusterFrontend)
-async def function_upload(
+@app.post("/v1/daas/upload", status_code=status.HTTP_200_OK)
+async def upload_function(
     function: ExecSyncParams,
     token: Annotated[str | None, Header()] = None
 ) -> int:

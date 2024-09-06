@@ -23,30 +23,32 @@ DESCRIPTIONS = {
 
 
 class AppRequirements(BaseModel):
-    REQUIREMENT: str = Field(...,
-                             DESCRIPTIONS['app_requirement']['requirement'])
-    SCHEDULING_POLICY: str = Field(...,
-                                   description=DESCRIPTIONS['app_requirement']['scheduling'])
+    REQUIREMENT: str = Field(
+        description=DESCRIPTIONS['app_requirement']['requirement'])
+    SCHEDULING_POLICY: str = Field(
+        description=DESCRIPTIONS['app_requirement']['scheduling'])
 
 
 class EdgeClusterFrontend(BaseModel):
-    ID: int = Field(..., description=DESCRIPTIONS['edge_cluster_fe']['id'])
-    NAME: str = Field(..., description=DESCRIPTIONS['edge_cluster_fe']['name'])
-    HOSTS: list[int] = Field(...,
-                             description=DESCRIPTIONS['edge_cluster_fe']['hosts'])
-    DATASTORES: list[int] = Field(...,
-                                  description=DESCRIPTIONS['edge_cluster_fe']['datastores'])
-    VNETS: list[int] = Field(...,
-                             description=DESCRIPTIONS['edge_cluster_fe']['vnets'])
-    TEMPLATE: dict = Field(...,
-                           description=DESCRIPTIONS['edge_cluster_fe']['template'])
+    ID: int = Field(description=DESCRIPTIONS['edge_cluster_fe']['id'])
+    NAME: str = Field(description=DESCRIPTIONS['edge_cluster_fe']['name'])
+    HOSTS: list[int] = Field(
+        description=DESCRIPTIONS['edge_cluster_fe']['hosts'])
+    DATASTORES: list[int] = Field(
+        description=DESCRIPTIONS['edge_cluster_fe']['datastores'])
+    VNETS: list[int] = Field(
+        description=DESCRIPTIONS['edge_cluster_fe']['vnets'])
+    TEMPLATE: dict = Field(
+        description=DESCRIPTIONS['edge_cluster_fe']['template'])
 
 
 class FunctionLanguage(str, Enum):
     PY = "PY"
     C = "C"
 
+
 class ExecSyncParams(BaseModel):
-    LANG: FunctionLanguage = Field(..., description=DESCRIPTIONS['function']['lang'])
-    FC: str = Field(..., description=DESCRIPTIONS['function']['fc'])
-    FC_HASH: str = Field(..., description=DESCRIPTIONS['function']['fc_hash'])
+    LANG: FunctionLanguage = Field(
+        description=DESCRIPTIONS['function']['lang'])
+    FC: str = Field(description=DESCRIPTIONS['function']['fc'])
+    FC_HASH: str = Field(description=DESCRIPTIONS['function']['fc_hash'])

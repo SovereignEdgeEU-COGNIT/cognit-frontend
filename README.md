@@ -74,3 +74,47 @@ The App client must issue an [authentication request](http://localhost:1338/docs
 
 This token will expire after 1 day. The client will then need to re-request the token with another authentication request. Every time the application is restarted, newer tokens will need to be re-issued as well. The keys used to generate and verify the token are regenerated when the Application starts.
 
+## Tests
+
+[Configure](./tests/conf.json) and run by issuing `./tests/device_client_requests.py`.
+
+Example requests
+
+```log
+Requesting token for oneadmin
+Response Code: 201
+Response Body: EssBCmEKCG9uZWFkbWluCghwYXNzd29yZAoKb3Blbm5lYnVsYRgDIgkKBwgKEgMYgAgiCgoICIEIEgMYgggyJgokCgIIGxIGCAUSAggFGhYKBAoCCAUKCAoGIOjC8rYGCgQaAggAEiQIABIgneDc8YxOVlK4hXmBOmkxFGXVSig0obOfEnZBlH3i_0gaQHEWqNHbpQfaNueeSlpPKIGZTo3GhUNQI7qf9Zvc0XOLy7YWALuyc_BEXzf7wGGaSvtQ_yMbTVmqiRtFsgyYEgciIgog0-XKTSEUc32CxFO2CaaLBxoveKg89k2mX975EycY1k8=
+Uploading application requirements {'REQUIREMENT': 'cpu = amd', 'SCHEDULING_POLICY': 'fast'}
+Response Code: 200
+Response Body: 33
+Reading application requirements 33
+Response Code: 200
+Response Body: {'REQUIREMENT': 'cpu = amd', 'SCHEDULING_POLICY': 'fast'}
+Updating application requirements {'REQUIREMENT': 'cpu = intel', 'SCHEDULING_POLICY': 'slow'}
+Response Code: 200
+Response Body: None
+Reading application requirements 33
+Response Code: 200
+Response Body: {'REQUIREMENT': 'cpu = intel', 'SCHEDULING_POLICY': 'slow'}
+Deleting application requirements 33
+Response Code: 204
+Reading application requirements 33
+Response Code: 404
+Response Body: {'detail': '[one.document.info] Error getting document [33].'}
+Uploading function {'LANG': 'PY', 'FC': 'ZGVmIHNheV9oZWxsbygpOgogICAgcHJpbnQoJ2hlbGxvJykK', 'FC_HASH': 'bacaa2c80e4f7f381117ff8503bd8752'}
+Response Code: 200
+Response Body: 32
+```
+
+Cognit Frontend logs
+
+```log
+INFO:     127.0.0.1:51354 - "POST /v1/authenticate HTTP/1.1" 201 Created
+INFO:     127.0.0.1:51357 - "POST /v1/app_requirements HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51360 - "GET /v1/app_requirements/33 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51363 - "PUT /v1/app_requirements/33 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51367 - "GET /v1/app_requirements/33 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51370 - "DELETE /v1/app_requirements/33 HTTP/1.1" 204 No Content
+INFO:     127.0.0.1:51374 - "GET /v1/app_requirements/33 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51377 - "POST /v1/daas/upload HTTP/1.1" 200 OK
+```
