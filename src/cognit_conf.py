@@ -1,5 +1,8 @@
 import yaml
 import os
+import socket
+import sys
+from urllib.parse import urlparse
 
 PATH = "/etc/cognit-frontend.conf"
 DEFAULT = {
@@ -29,8 +32,17 @@ else:
 config = DEFAULT.copy()
 config.update(user_config)
 
+ONE_XMLRPC = config['one_xmlrpc']
+
+one = urlparse(ONE_XMLRPC)
+
+try:
+    socket.create_connection((one.hostname, one.port), timeout=5)
+except socket.error as e:
+    print(f"Error: Unable to connect to OpenNebula at {ONE_XMLRPC}. {str(e)}")
+    sys.exit(1)
+
 HOST = config['host']
 PORT = config['port']
-ONE_XMLRPC = config['one_xmlrpc']
 LOG_LEVEL = config['log_level']
 AI_ORCHESTRATOR_ENDPOINT = config['ai_orchestrator_endpoint']
