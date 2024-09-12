@@ -16,6 +16,7 @@ from cognit_models import AppRequirements, EdgeClusterFrontend, ExecSyncParams
 one.ONE_XMLRPC = conf.ONE_XMLRPC
 
 # TODO: Update design doc
+# TODO: Check if OpenNebula is reachable when loading conf. Stop the app from running if unreachable.
 
 app = FastAPI(title='Cognit Frontend', version='0.1.0')
 security = HTTPBasic()

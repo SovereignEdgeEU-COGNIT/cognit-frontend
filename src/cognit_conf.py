@@ -17,7 +17,7 @@ if os.path.exists(PATH):
     with open(PATH, 'r') as file:
         try:
             user_config = yaml.safe_load(file)
-            if user_config is None:
+            if not isinstance(user_config, dict):
                 user_config = {}
         except yaml.YAMLError as e:
             print(f"{e}\n{FALLBACK_MSG}")
