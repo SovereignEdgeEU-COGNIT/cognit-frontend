@@ -27,13 +27,8 @@ Create virtualenv
 ```bash
 cd /path/to/cognit-frontend-repo
 python -m venv venv
-pip install -r requirements.txt
-```
-
-Load the virtual env (Bash)
-
-```bash
 source venv/bin/activate
+pip install -r requirements.txt
 ```
 
 Run the application
