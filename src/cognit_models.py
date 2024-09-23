@@ -3,6 +3,7 @@ from enum import Enum
 
 DESCRIPTIONS = {
     'app_requirement': {
+        'flavour': "",
         'requirement': "Requirement that needs to be taken into account",
         'scheduling': "Scheduling policy that applies to the requirement"
     },
@@ -23,6 +24,8 @@ DESCRIPTIONS = {
 
 
 class AppRequirements(BaseModel):
+    FLAVOUR: str = Field(default="Nature",
+                         description=DESCRIPTIONS['app_requirement']['flavour'])
     REQUIREMENT: str = Field(
         description=DESCRIPTIONS['app_requirement']['requirement'])
     SCHEDULING_POLICY: str = Field(

@@ -1,4 +1,5 @@
 {
+    "FLAVOUR": "smart_city",
     "REQUIREMENT": "hypervisor = KVM",
     "SCHEDULING_POLICY": "ENERGY"
 }
