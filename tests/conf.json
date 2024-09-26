@@ -3,8 +3,7 @@
   "credentials": "oneadmin:opennebula",
   "app_requirements": [
     {
-      "REQUIREMENT": "cpu = amd",
-      "SCHEDULING_POLICY": "fast"
+      "FLAVOUR": "smart_city"
     },
     {
       "REQUIREMENT": "cpu = intel",
