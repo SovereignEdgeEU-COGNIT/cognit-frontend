@@ -51,7 +51,7 @@ def function_create(one: pyone.OneServer,  function: dict) -> int:
     # get list of function documents for this user
     # https://docs.opennebula.io/6.8/integration_and_development/system_interfaces/api.html#one-documentpool-info
     documents = validate_call(lambda:
-        one.documentpool.info(-3, -1, -1, DOCUMENT_TYPES['FUNCTION']))
+                              one.documentpool.info(-3, -1, -1, DOCUMENT_TYPES['FUNCTION']))
 
     for document in documents.DOCUMENT:
         document_body = dict(document.TEMPLATE)

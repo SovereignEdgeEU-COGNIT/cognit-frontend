@@ -16,18 +16,21 @@ from cognit_models import AppRequirements, EdgeClusterFrontend, ExecSyncParams
 one.ONE_XMLRPC = conf.ONE_XMLRPC
 
 # TODO: Update design doc
-# TODO: Check if OpenNebula is reachable when loading conf. Stop the app from running if unreachable.
 
 app = FastAPI(title='Cognit Frontend', version='0.1.0')
-security = HTTPBasic()
-
 
 @app.post("/v1/authenticate", status_code=status.HTTP_201_CREATED)
-async def authenticate(credentials: Annotated[HTTPBasicCredentials, Depends(security)]) -> str:
-    one.authenticate(credentials.username, credentials.password)
+async def authenticate(credentials: Annotated[HTTPBasicCredentials, Depends(HTTPBasic())]) -> str:
+    one.authenticate(credentials.username,
+                     credentials.password, auth.PUBLIC_KEY)
 
     token = auth.generate_token(credentials.username, credentials.password)
     return token
+
+@app.get("/v1/public_key", status_code=status.HTTP_200_OK)
+async def get_public_key() -> str:
+
+    return auth.PUBLIC_KEY
 
 
 @app.post("/v1/app_requirements", status_code=status.HTTP_200_OK)
