@@ -28,8 +28,7 @@ async def root():
 
 @app.post("/v1/authenticate", status_code=status.HTTP_201_CREATED)
 async def authenticate(credentials: Annotated[HTTPBasicCredentials, Depends(HTTPBasic())]) -> str:
-    one.authenticate(credentials.username,
-                     credentials.password, auth.PUBLIC_KEY)
+    one.authenticate(credentials.username, credentials.password)
 
     token = auth.generate_token(credentials.username, credentials.password)
     return token
