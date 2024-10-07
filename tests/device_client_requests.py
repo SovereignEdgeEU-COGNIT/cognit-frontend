@@ -19,7 +19,7 @@ def authenticate(user: str, password: str):
     response = requests.post(uri, auth=HTTPBasicAuth(user, password))
     token = response.json()
 
-    inspect_response(response)
+    # inspect_response(response)
 
     return token
 
@@ -99,12 +99,12 @@ def inspect_response(response: requests.Response):
 credentials = CONF['credentials'].split(':')
 token = authenticate(credentials[0], credentials[1])
 
-app_req_id = app_req_upload(token, CONF['app_requirements'][0])
-app_req_read(token, app_req_id)
-app_req_update(token, app_req_id, CONF['app_requirements'][1])
-app_req_read(token, app_req_id)
-app_req_delete(token, app_req_id)
-app_req_read(token, app_req_id)
+# app_req_id = app_req_upload(token, CONF['app_requirements'][0])
+# app_req_read(token, app_req_id)
+# app_req_update(token, app_req_id, CONF['app_requirements'][1])
+# app_req_read(token, app_req_id)
+# app_req_delete(token, app_req_id)
+# app_req_read(token, app_req_id)
 
 # TODO: Test when AI orchestrator communication is guaranteed
-# function_upload(token, CONF['functions']['py'])
+function_upload(token, CONF['functions']['py'])
