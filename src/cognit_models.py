@@ -70,9 +70,15 @@ class FunctionLanguage(str, Enum):
     PY = "PY"
     C = "C"
 
+    def __str__(self):
+        return self.value
+
 
 class ExecSyncParams(BaseModel):
     LANG: FunctionLanguage = Field(
         description=DESCRIPTIONS['function']['lang'])
     FC: str = Field(description=DESCRIPTIONS['function']['fc'])
     FC_HASH: str = Field(description=DESCRIPTIONS['function']['fc_hash'])
+
+    class Config:
+        use_enum_values = True
