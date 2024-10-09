@@ -35,9 +35,16 @@ config.update(user_config)
 ONE_XMLRPC = config['one_xmlrpc']
 
 one = urlparse(ONE_XMLRPC)
+port = one.port
+
+if one.port is None:
+    if one.scheme == 'https':
+        port = 443
+    elif one.scheme == 'http':
+        port = 80
 
 try:
-    socket.create_connection((one.hostname, one.port), timeout=5)
+    socket.create_connection((one.hostname, port), timeout=5)
 except socket.error as e:
     print(f"Error: Unable to connect to OpenNebula at {ONE_XMLRPC}. {str(e)}")
     sys.exit(1)
