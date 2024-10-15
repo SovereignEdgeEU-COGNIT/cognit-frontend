@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from fastapi.responses import RedirectResponse
 from fastapi import FastAPI, status, HTTPException, Header, Path, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from typing import Annotated, Any, List
@@ -16,18 +17,27 @@ from cognit_models import AppRequirements, EdgeClusterFrontend, ExecSyncParams
 one.ONE_XMLRPC = conf.ONE_XMLRPC
 
 # TODO: Update design doc
-# TODO: Check if OpenNebula is reachable when loading conf. Stop the app from running if unreachable.
 
 app = FastAPI(title='Cognit Frontend', version='0.1.0')
-security = HTTPBasic()
+
+
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/docs")
 
 
 @app.post("/v1/authenticate", status_code=status.HTTP_201_CREATED)
-async def authenticate(credentials: Annotated[HTTPBasicCredentials, Depends(security)]) -> str:
+async def authenticate(credentials: Annotated[HTTPBasicCredentials, Depends(HTTPBasic())]) -> str:
     one.authenticate(credentials.username, credentials.password)
 
     token = auth.generate_token(credentials.username, credentials.password)
     return token
+
+
+@app.get("/v1/public_key", status_code=status.HTTP_200_OK)
+async def get_public_key() -> str:
+
+    return auth.PUBLIC_KEY
 
 
 @app.post("/v1/app_requirements", status_code=status.HTTP_200_OK)
@@ -91,7 +101,7 @@ async def get_edge_cluster_frontends(
                             'Content-Type': 'application/json'})
     body = response.json()
 
-    cluster_ids = body['ID'] # AI orchestrator returns an array of IDs
+    cluster_ids = body['ID']  # AI orchestrator returns an array of IDs
     clusters = []
 
     for cluster_id in cluster_ids:

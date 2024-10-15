@@ -2,7 +2,7 @@ from biscuit_auth import Authorizer, Biscuit, BiscuitBuilder, KeyPair
 from datetime import datetime, timedelta, timezone
 
 keypair = KeyPair()
-
+PUBLIC_KEY = keypair.public_key.to_hex()
 
 def generate_token(username: str, password: str, private_key=keypair.private_key) -> str:
 

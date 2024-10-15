@@ -1,11 +1,14 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from enum import Enum
+from typing import Optional
 
 DESCRIPTIONS = {
     'app_requirement': {
-        'flavour': "",
-        'requirement': "Requirement that needs to be taken into account",
-        'scheduling': "Scheduling policy that applies to the requirement"
+        'latency': "Maximum latency in miliseconds",
+        'exec_time': "Max execution time allowed for the function to execute",
+        'energy': "Minimum energy renewable percentage",
+        'flavour': "String describing the flavour of the Runtime. There is oneidentifier per DaaS and FaaS corresponding to the different use cases",
+        'geolocation': "Scheduling policy that applies to the requirement"
     },
     'edge_cluster_fe': {
         'id': "Cluster ID in the Cloud Edge Manager cluster pool",
@@ -24,13 +27,31 @@ DESCRIPTIONS = {
 
 
 class AppRequirements(BaseModel):
-    FLAVOUR: str = Field(default="Nature",
-                         description=DESCRIPTIONS['app_requirement']['flavour'])
-    REQUIREMENT: str = Field(
-        description=DESCRIPTIONS['app_requirement']['requirement'])
-    SCHEDULING_POLICY: str = Field(
-        description=DESCRIPTIONS['app_requirement']['scheduling'])
+    FLAVOUR: str = Field(
+        default="Nature",
+        description=DESCRIPTIONS['app_requirement']['latency'])
+    MAX_LATENCY: Optional[int] = Field(
+        default=10,
+        description=DESCRIPTIONS['app_requirement']['latency'])
+    MAX_FUNCTION_EXECUTION_TIME: Optional[float] = Field(
+        default=1.0,
+        description=DESCRIPTIONS['app_requirement']['exec_time'])
+    MIN_ENERGY_RENEWABLE_USAGE: Optional[int] = Field(
+        default=80,
+        description=DESCRIPTIONS['app_requirement']['energy'])
+    GEOLOCATION: Optional[str] = Field(
+        default=None,
+        description=DESCRIPTIONS['app_requirement']['geolocation'])
 
+    @field_validator('GEOLOCATION')
+    @classmethod
+    def validate_geolocation(cls, v, info):
+        max_latency = info.data.get('MAX_LATENCY')
+        max_latency_default = cls.model_fields['MAX_LATENCY'].default
+
+        if max_latency != max_latency_default and v is None:
+            raise ValueError('GEOLOCATION is required when MAX_LATENCY is set')
+        return v
 
 class EdgeClusterFrontend(BaseModel):
     ID: int = Field(description=DESCRIPTIONS['edge_cluster_fe']['id'])
@@ -49,9 +70,15 @@ class FunctionLanguage(str, Enum):
     PY = "PY"
     C = "C"
 
+    def __str__(self):
+        return self.value
+
 
 class ExecSyncParams(BaseModel):
     LANG: FunctionLanguage = Field(
         description=DESCRIPTIONS['function']['lang'])
     FC: str = Field(description=DESCRIPTIONS['function']['fc'])
     FC_HASH: str = Field(description=DESCRIPTIONS['function']['fc_hash'])
+
+    class Config:
+        use_enum_values = True
