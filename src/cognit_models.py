@@ -4,10 +4,10 @@ from typing import Optional
 
 DESCRIPTIONS = {
     'app_requirement': {
-        'latency': "Maximum latency in miliseconds",
+        'latency': "Maximum latency in milliseconds",
         'exec_time': "Max execution time allowed for the function to execute",
         'energy': "Minimum energy renewable percentage",
-        'flavour': "String describing the flavour of the Runtime. There is oneidentifier per DaaS and FaaS corresponding to the different use cases",
+        'flavour': "String describing the flavour of the Runtime. There is one identifier per DaaS and FaaS corresponding to the different use cases",
         'geolocation': "Scheduling policy that applies to the requirement"
     },
     'edge_cluster_fe': {

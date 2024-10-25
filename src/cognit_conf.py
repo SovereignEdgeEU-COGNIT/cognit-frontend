@@ -10,6 +10,7 @@ DEFAULT = {
     'port': 1338,
     'one_xmlrpc': 'http://localhost:2633/RPC2',
     'ai_orchestrator_endpoint': 'http://localhost:4567',
+    'default_cluster': 0,
     'log_level': 'info'
 }
 
@@ -53,3 +54,4 @@ HOST = config['host']
 PORT = config['port']
 LOG_LEVEL = config['log_level']
 AI_ORCHESTRATOR_ENDPOINT = config['ai_orchestrator_endpoint']
+DEFAULT_CLUSTER = config['default_cluster']

@@ -76,9 +76,10 @@ def cluster_get(one: pyone.OneServer, cluster_id: int) -> dict:
     return {
         'ID': cluster_id,
         'NAME': cluster.NAME,
-        'HOSTS': cluster.HOST.ID,
+        'HOSTS': cluster.HOSTS.ID,
         'DATASTORES': cluster.DATASTORES.ID,
-        'VNETS': cluster.VNETS.ID
+        'VNETS': cluster.VNETS.ID,
+        'TEMPLATE': dict(cluster.TEMPLATE)
     }
 
 # Helpers

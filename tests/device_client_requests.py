@@ -89,6 +89,19 @@ def function_upload(token: str, body: dict):
 
     return id
 
+def cluster_get(token: str, app_req_id: int):
+    print(f"Obtaining Cluster for {app_req_id}")
+
+    uri = f'{CONF["api_endpoint"]}/v1/app_requirements/{app_req_id}/ec_fe'
+    headers = {"token": token}
+
+    response = requests.get(uri, headers=headers)
+    id = response.json()
+
+    inspect_response(response)
+
+    return id
+
 
 def inspect_response(response: requests.Response):
     print(f"Response Code: {response.status_code}")
@@ -107,3 +120,5 @@ app_req_delete(token, app_req_id)
 app_req_read(token, app_req_id)
 
 function_upload(token, CONF['functions']['py'])
+
+cluster_get(token, app_req_id)
