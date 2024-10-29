@@ -47,9 +47,8 @@ class AppRequirements(BaseModel):
     @classmethod
     def validate_geolocation(cls, v, info):
         max_latency = info.data.get('MAX_LATENCY')
-        max_latency_default = cls.model_fields['MAX_LATENCY'].default
 
-        if max_latency != max_latency_default and v is None:
+        if max_latency != None and v is None:
             raise ValueError('GEOLOCATION is required when MAX_LATENCY is set')
         return v
 
