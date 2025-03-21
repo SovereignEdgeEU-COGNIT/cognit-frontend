@@ -8,6 +8,7 @@ import uvicorn
 import re
 import requests
 import json
+import logging
 
 import cognit_conf as conf
 import biscuit_token as auth
@@ -15,6 +16,10 @@ import opennebula as one
 from cognit_models import AppRequirements, EdgeClusterFrontend, ExecSyncParams
 
 one.ONE_XMLRPC = conf.ONE_XMLRPC
+
+logger = logging.getLogger("uvicorn")
+if conf.LOG_LEVEL == 'debug':  # uvicorn run log parameter is ignored
+    logger.setLevel(logging.DEBUG)
 
 # TODO: Update design doc
 
@@ -97,9 +102,15 @@ async def get_edge_cluster_frontends(
     body = {
         'app_requirement_id': id
     }
-    response = requests.get(uri, data=json.dumps(body), headers={
-                            'Content-Type': 'application/json'})
-    body = response.json()
+
+    try:
+        response = requests.get(uri, data=json.dumps(body))
+        body = response.json()
+    except Exception as e:
+        logger.error(f"Could not reach AI Orchestrator at {uri}. {str(e)}")
+        logger.warning(f"Returning default cluster: {conf.DEFAULT_CLUSTER}")
+
+        body = {'ID': [conf.DEFAULT_CLUSTER]}
 
     cluster_ids = body['ID']  # AI orchestrator returns an array of IDs
     clusters = []
@@ -126,7 +137,7 @@ if __name__ == "__main__":
 
 
 def authorize(token) -> list:
-    if token == None:
+    if token is None:
         message = 'Missing token in header'
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=message)

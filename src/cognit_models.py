@@ -4,10 +4,10 @@ from typing import Optional
 
 DESCRIPTIONS = {
     'app_requirement': {
-        'latency': "Maximum latency in miliseconds",
+        'latency': "Maximum latency in milliseconds",
         'exec_time': "Max execution time allowed for the function to execute",
         'energy': "Minimum energy renewable percentage",
-        'flavour': "String describing the flavour of the Runtime. There is oneidentifier per DaaS and FaaS corresponding to the different use cases",
+        'flavour': "String describing the flavour of the Runtime. There is one identifier per DaaS and FaaS corresponding to the different use cases",
         'geolocation': "Scheduling policy that applies to the requirement"
     },
     'edge_cluster_fe': {
@@ -47,9 +47,8 @@ class AppRequirements(BaseModel):
     @classmethod
     def validate_geolocation(cls, v, info):
         max_latency = info.data.get('MAX_LATENCY')
-        max_latency_default = cls.model_fields['MAX_LATENCY'].default
 
-        if max_latency != max_latency_default and v is None:
+        if max_latency != None and v is None:
             raise ValueError('GEOLOCATION is required when MAX_LATENCY is set')
         return v
 
