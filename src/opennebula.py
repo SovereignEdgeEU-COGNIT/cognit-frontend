@@ -1,5 +1,6 @@
 import pyone
 from fastapi import HTTPException, status
+from haversine import haversine, Unit
 
 ONE_XMLRPC = None  # Set when importing module
 DOCUMENT_TYPES = {
@@ -7,6 +8,9 @@ DOCUMENT_TYPES = {
     'FUNCTION': 1339
 }
 
+def _parse_geolocation(geo_str: str) -> tuple[float, float]:
+    lat_str, lon_str = geo_str.split(",")
+    return float(lat_str.strip()), float(lon_str.strip())
 
 def create_client(user: str, password: str) -> pyone.OneServer:
     return pyone.OneServer(ONE_XMLRPC, session=f"{user}:{password}")
@@ -68,6 +72,25 @@ def function_create(one: pyone.OneServer,  function: dict) -> int:
 def function_get(one: pyone.OneServer, document_id: int) -> dict:
     document = document_get(one, document_id, 'FUNCTION')
     return dict(document.TEMPLATE)
+
+def clusters_ids_get(one: pyone.OneServer, geolocation: str) -> list[int]:
+    clusters = one.clusterpool.info()
+    device_geolocation = _parse_geolocation(geolocation)
+    cluster_distances = []
+
+    for cluster in clusters.CLUSTER:
+        cluster_geolocation = cluster.TEMPLATE.get("GEOLOCATION")
+        if cluster_geolocation:
+            try:
+                cluster_coords = _parse_geolocation(cluster_geolocation)
+                distance = haversine(device_geolocation, cluster_coords, unit=Unit.KILOMETERS)
+                cluster_distances.append((cluster.ID, distance))
+            except Exception as e:
+                print(f"Skipping cluster {cluster.ID} due to error: {e}")
+                continue
+
+    sorted_clusters = sorted(cluster_distances, key=lambda x: x[1])
+    return [cid for cid, _ in sorted_clusters]
 
 
 def cluster_get(one: pyone.OneServer, cluster_id: int) -> dict:

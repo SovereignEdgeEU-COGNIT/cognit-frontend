@@ -52,6 +52,7 @@ class AppRequirements(BaseModel):
             raise ValueError('GEOLOCATION is required when MAX_LATENCY is set')
         return v
 
+       
 class EdgeClusterFrontend(BaseModel):
     ID: int = Field(description=DESCRIPTIONS['edge_cluster_fe']['id'])
     NAME: str = Field(description=DESCRIPTIONS['edge_cluster_fe']['name'])
