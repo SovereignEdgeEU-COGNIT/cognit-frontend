@@ -116,9 +116,10 @@ app_req_id = app_req_upload(token, CONF['app_requirements'][0])
 app_req_read(token, app_req_id)
 app_req_update(token, app_req_id, CONF['app_requirements'][1])
 app_req_read(token, app_req_id)
+
+cluster_get(token, app_req_id)
+
 app_req_delete(token, app_req_id)
 app_req_read(token, app_req_id)
 
 function_upload(token, CONF['functions']['py'])
-
-cluster_get(token, app_req_id)

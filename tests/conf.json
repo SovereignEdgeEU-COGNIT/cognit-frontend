@@ -7,14 +7,20 @@
       "MAX_LATENCY": 10,
       "MAX_FUNCTION_EXECUTION_TIME": 1.0,
       "MIN_ENERGY_RENEWABLE_USAGE": 80,
-      "GEOLOCATION": "41.3874, 2.1686"
+      "GEOLOCATION": {
+         "latitude": 41.3874,
+         "longitude": 2.1686
+      }
     },
     {
       "FLAVOUR": "SmartCity",
       "MAX_LATENCY": 13,
       "MAX_FUNCTION_EXECUTION_TIME": 2.0,
       "MIN_ENERGY_RENEWABLE_USAGE": 70,
-      "GEOLOCATION": "41.3874, 2.1686"
+      "GEOLOCATION": {
+         "latitude": 41.3874,
+         "longitude": 2.1686
+      }
     }
   ],
   "functions": {
