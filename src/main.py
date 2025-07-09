@@ -97,24 +97,9 @@ async def get_edge_cluster_frontends(
 ) -> List[EdgeClusterFrontend]:
 
     client = authorize(token)
-
-    uri = conf.AI_ORCHESTRATOR_ENDPOINT
-    body = {
-        'app_requirement_id': id
-    }
-
-    try:
-        response = requests.get(uri, data=json.dumps(body))
-        body = response.json()
-    except Exception as e:
-        logger.error(f"Could not reach AI Orchestrator at {uri}. {str(e)}")
-        logger.warning(f"Returning default cluster: {conf.DEFAULT_CLUSTER}")
-
-        body = {'ID': [conf.DEFAULT_CLUSTER]}
-
-    cluster_ids = body['ID']  # AI orchestrator returns an array of IDs
+    app_reqs = one.app_requirement_get(client, id)
+    cluster_ids = one.clusters_ids_get(client, app_reqs['GEOLOCATION'])
     clusters = []
-
     for cluster_id in cluster_ids:
         clusters.append(one.cluster_get(client, cluster_id))
 

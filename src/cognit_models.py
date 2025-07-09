@@ -8,7 +8,7 @@ DESCRIPTIONS = {
         'exec_time': "Max execution time allowed for the function to execute",
         'energy': "Minimum energy renewable percentage",
         'flavour': "String describing the flavour of the Runtime. There is one identifier per DaaS and FaaS corresponding to the different use cases",
-        'geolocation': "Scheduling policy that applies to the requirement"
+        'geolocation': "geolocation of the device"
     },
     'edge_cluster_fe': {
         'id': "Cluster ID in the Cloud Edge Manager cluster pool",
@@ -25,6 +25,9 @@ DESCRIPTIONS = {
     }
 }
 
+class Location(BaseModel):
+    latitude: float
+    longitude: float
 
 class AppRequirements(BaseModel):
     FLAVOUR: str = Field(
@@ -39,19 +42,28 @@ class AppRequirements(BaseModel):
     MIN_ENERGY_RENEWABLE_USAGE: Optional[int] = Field(
         default=80,
         description=DESCRIPTIONS['app_requirement']['energy'])
-    GEOLOCATION: Optional[str] = Field(
+    GEOLOCATION: Optional[Location] = Field(
         default=None,
         description=DESCRIPTIONS['app_requirement']['geolocation'])
 
-    @field_validator('GEOLOCATION')
-    @classmethod
-    def validate_geolocation(cls, v, info):
-        max_latency = info.data.get('MAX_LATENCY')
+    def model_dump(self, *args, **kwargs):
+        data = super().model_dump(*args, **kwargs)
+        if self.GEOLOCATION:
+            data["GEOLOCATION"] = f"{self.GEOLOCATION.latitude},{self.GEOLOCATION.longitude}"
+        return data
 
-        if max_latency != None and v is None:
-            raise ValueError('GEOLOCATION is required when MAX_LATENCY is set')
+    @field_validator('GEOLOCATION', mode='before')
+    @classmethod
+    def validate_geolocation(cls, v):
+        if isinstance(v, str):
+            try:
+                lat_str, lon_str = v.split(',')
+                return Location(latitude=float(lat_str), longitude=float(lon_str))
+            except Exception as e:
+                raise ValueError(f"Invalid GEOLOCATION string: {v}") from e
         return v
 
+       
 class EdgeClusterFrontend(BaseModel):
     ID: int = Field(description=DESCRIPTIONS['edge_cluster_fe']['id'])
     NAME: str = Field(description=DESCRIPTIONS['edge_cluster_fe']['name'])
