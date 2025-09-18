@@ -11,21 +11,7 @@ DEFAULT = {
     'one_xmlrpc': 'http://localhost:2633/RPC2',
     'ai_orchestrator_endpoint': 'http://localhost:4567',
     'default_cluster': 0,
-    'log_level': 'info',
-    'cluster_flavours': {
-        # Phoenix Cluster
-        118: ['Energy', 'EnergyTorch'],
-        # Cetic Edge Cluster
-        117: ['CyberSecurity'],
-        # Francesco Cluster
-        116: ['Nature'],
-        # UC1 BCN Edge Cluster
-        113: ['SmartCity'],
-        # DYN Cluster
-        100: [],
-        # Ice Cluster
-        0: ['Energy', 'EnergyTorch', 'Nature', 'CyberSecurity', 'ServerlessRuntime', 'SmartCity'],
-    }
+    'log_level': 'info'
 }
 
 FALLBACK_MSG = 'Using default configuration'
@@ -69,4 +55,3 @@ PORT = config['port']
 LOG_LEVEL = config['log_level']
 AI_ORCHESTRATOR_ENDPOINT = config['ai_orchestrator_endpoint']
 DEFAULT_CLUSTER = config['default_cluster']
-CLUSTER_FLAVOURS = config['cluster_flavours']
