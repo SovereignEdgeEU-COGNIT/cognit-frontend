@@ -16,7 +16,7 @@ DESCRIPTIONS = {
         'hosts': "Hypervisor nodes ID belonging to the cluster",
         'datastores': "Datastores ID belonging to the cluster",
         'vnets': "Virtual Networks ID belonging to the cluster",
-        'template': "Additional misc information of the cluster"
+        'template': "Additional misc information of the cluster including SUPPORTED_FLAVOURS"
     },
     'function': {
         'lang': "Programming Language of the function",

@@ -1,6 +1,7 @@
 import pyone
 from fastapi import HTTPException, status
 from haversine import haversine, Unit
+import cognit_conf
 
 ONE_XMLRPC = None  # Set when importing module
 DOCUMENT_TYPES = {
@@ -73,12 +74,18 @@ def function_get(one: pyone.OneServer, document_id: int) -> dict:
     document = document_get(one, document_id, 'FUNCTION')
     return dict(document.TEMPLATE)
 
-def clusters_ids_get(one: pyone.OneServer, geolocation: str) -> list[int]:
+def clusters_ids_get(one: pyone.OneServer, geolocation: str, flavour: str) -> list[int]:
     clusters = one.clusterpool.info()
     device_geolocation = _parse_geolocation(geolocation)
     cluster_distances = []
 
     for cluster in clusters.CLUSTER:
+        # Filter clusters by flavour support
+        supported_flavours = cognit_conf.CLUSTER_FLAVOURS.get(cluster.ID, [])
+
+        if flavour not in supported_flavours:
+            continue
+            
         cluster_geolocation = cluster.TEMPLATE.get("GEOLOCATION")
         if cluster_geolocation:
             try:
@@ -99,6 +106,11 @@ def cluster_get(one: pyone.OneServer, cluster_id: int, flavour: str) -> dict:
     # Add the information about the flavour in the cluster endpoint
     edge_cluster_frontend_endpoint = cluster.TEMPLATE.get('EDGE_CLUSTER_FRONTEND') + '/' + flavour
     cluster.TEMPLATE['EDGE_CLUSTER_FRONTEND'] = edge_cluster_frontend_endpoint
+    
+    # Add supported flavours as info in the cluster template
+    supported_flavours = cognit_conf.CLUSTER_FLAVOURS.get(cluster_id, [])
+    cluster.TEMPLATE['SUPPORTED_FLAVOURS'] = supported_flavours
+    
     return {
         'ID': cluster_id,
         'NAME': cluster.NAME,
