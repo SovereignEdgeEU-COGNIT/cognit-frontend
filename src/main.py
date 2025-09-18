@@ -107,6 +107,9 @@ async def get_edge_cluster_frontends(
     for cluster_id in cluster_ids:
         clusters.append(one.cluster_get(client, cluster_id, flavour))
 
+    ### !!!!!!!!!!!!!!!!!!!! Temporary return only the ICE cluster (avoid blocking other people uses cases) !!!!!!!!!!!!!!!!!!!!
+    clusters = list(filter(lambda cluster: cluster['ID'] == 0, clusters))
+  
     return clusters
 
 
