@@ -1,7 +1,6 @@
 import pyone
 from fastapi import HTTPException, status
 from haversine import haversine, Unit
-import cognit_conf
 
 ONE_XMLRPC = None  # Set when importing module
 DOCUMENT_TYPES = {
@@ -105,7 +104,7 @@ def clusters_ids_get(one: pyone.OneServer, geolocation: str, flavour: str) -> li
 
 def cluster_get(one: pyone.OneServer, cluster_id: int, flavour: str) -> dict:
     cluster = validate_call(lambda: one.cluster.info(cluster_id))
-    
+
     # Add the information about the flavour in the cluster endpoint
     edge_cluster_frontend_endpoint = cluster.TEMPLATE.get('EDGE_CLUSTER_FRONTEND') + '/' + flavour
     cluster.TEMPLATE['EDGE_CLUSTER_FRONTEND'] = edge_cluster_frontend_endpoint
