@@ -73,12 +73,21 @@ def function_get(one: pyone.OneServer, document_id: int) -> dict:
     document = document_get(one, document_id, 'FUNCTION')
     return dict(document.TEMPLATE)
 
-def clusters_ids_get(one: pyone.OneServer, geolocation: str) -> list[int]:
+def clusters_ids_get(one: pyone.OneServer, geolocation: str, flavour: str) -> list[int]:
     clusters = one.clusterpool.info()
     device_geolocation = _parse_geolocation(geolocation)
     cluster_distances = []
 
     for cluster in clusters.CLUSTER:
+        # Filter clusters by flavour support
+        flavours_str = cluster.TEMPLATE.get("FLAVOURS")
+        
+        # If FLAVOURS key doesn't exist or is empty, keep the cluster
+        if flavours_str:
+            supported_flavours = flavours_str.split(",")
+            if flavour not in supported_flavours:
+                continue
+            
         cluster_geolocation = cluster.TEMPLATE.get("GEOLOCATION")
         if cluster_geolocation:
             try:
@@ -93,9 +102,13 @@ def clusters_ids_get(one: pyone.OneServer, geolocation: str) -> list[int]:
     return [cid for cid, _ in sorted_clusters]
 
 
-def cluster_get(one: pyone.OneServer, cluster_id: int) -> dict:
+def cluster_get(one: pyone.OneServer, cluster_id: int, flavour: str) -> dict:
     cluster = validate_call(lambda: one.cluster.info(cluster_id))
 
+    # Add the information about the flavour in the cluster endpoint
+    edge_cluster_frontend_endpoint = cluster.TEMPLATE.get('EDGE_CLUSTER_FRONTEND') + '/' + flavour
+    cluster.TEMPLATE['EDGE_CLUSTER_FRONTEND'] = edge_cluster_frontend_endpoint
+    
     return {
         'ID': cluster_id,
         'NAME': cluster.NAME,

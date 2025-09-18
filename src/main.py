@@ -98,11 +98,18 @@ async def get_edge_cluster_frontends(
 
     client = authorize(token)
     app_reqs = one.app_requirement_get(client, id)
-    cluster_ids = one.clusters_ids_get(client, app_reqs['GEOLOCATION'])
+
+    # Flavour from the device runtime
+    flavour = app_reqs['FLAVOUR']
+
+    # Get cluster IDs filtered by flavour support and sorted by distance from device
+    cluster_ids = one.clusters_ids_get(client, app_reqs['GEOLOCATION'], flavour)
+
+    # Get cluster information with flavour-specific endpoint and supported flavours
     clusters = []
     for cluster_id in cluster_ids:
-        clusters.append(one.cluster_get(client, cluster_id))
-
+        clusters.append(one.cluster_get(client, cluster_id, flavour))
+    
     return clusters
 
 
