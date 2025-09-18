@@ -93,9 +93,12 @@ def clusters_ids_get(one: pyone.OneServer, geolocation: str) -> list[int]:
     return [cid for cid, _ in sorted_clusters]
 
 
-def cluster_get(one: pyone.OneServer, cluster_id: int) -> dict:
+def cluster_get(one: pyone.OneServer, cluster_id: int, flavour: str) -> dict:
     cluster = validate_call(lambda: one.cluster.info(cluster_id))
-
+    
+    # Add the information about the flavour in the cluster endpoint
+    edge_cluster_frontend_endpoint = cluster.TEMPLATE.get('EDGE_CLUSTER_FRONTEND') + '/' + flavour
+    cluster.TEMPLATE['EDGE_CLUSTER_FRONTEND'] = edge_cluster_frontend_endpoint
     return {
         'ID': cluster_id,
         'NAME': cluster.NAME,
