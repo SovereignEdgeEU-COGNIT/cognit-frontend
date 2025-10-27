@@ -3,7 +3,7 @@
 from fastapi.responses import RedirectResponse
 from fastapi import FastAPI, status, HTTPException, Header, Path, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from typing import Annotated, Any, List
+from typing import Annotated, Any, List, Optional
 import uvicorn
 import re
 import logging
@@ -101,18 +101,38 @@ async def get_edge_cluster_frontends(
     client = authorize(token)
     app_reqs = one.app_requirement_get(client, id)
 
-    # Flavour from the device runtime
-    flavour = app_reqs['FLAVOUR']
+    device_id: Optional[str] = app_reqs.get("ID")
 
-    # Get cluster IDs filtered by flavour support and sorted by distance from device
-    cluster_ids = one.clusters_ids_get(client, app_reqs['GEOLOCATION'], flavour)
+    # Backward compatibility: fallback to cluster selection if ID is not in the app requirements
+    if not device_id or device_id == 'None':
+        print("No device ID found in the app requirements")
+        flavour = app_reqs['FLAVOUR']
+        cluster_ids = one.clusters_ids_get(client, app_reqs['GEOLOCATION'], flavour)
+        clusters = []
+        for cluster_id in cluster_ids:
+            clusters.append(one.cluster_get(client, cluster_id, flavour))
+        print("Clusters:", clusters)
+        return clusters
 
-    # Get cluster information with flavour-specific endpoint and supported flavours
-    clusters = []
-    for cluster_id in cluster_ids:
-        clusters.append(one.cluster_get(client, cluster_id, flavour))
-    
-    return clusters
+    cached_device_assignment = db.get_device_assignment(device_id)
+    if cached_device_assignment and cached_device_assignment['app_req_json'] == app_reqs:
+        print("App requirements are the same as the cached ones")
+        db.update_last_seen(device_id)
+        cluster = one.cluster_get(client, int(cached_device_assignment['cluster_id']), cached_device_assignment['flavour'])
+        return [cluster]
+    elif not cached_device_assignment:
+        print("No cached device assignment found")
+        # Insert a new row in the database with the new app requirements, new cluster and persist the assignment
+        # TODO: Implement cluster selection
+        tmp_cluster_id = 0
+        flavour = app_reqs['FLAVOUR']
+        db.insert_device_assignment(device_id, tmp_cluster_id, flavour, id, app_reqs)
+        cluster = one.cluster_get(client, tmp_cluster_id, flavour)
+        return [cluster]
+    else:
+        # Update the cached assignment with the new app requirements, new cluster and persist the assignment
+        # TODO: Implement cluster selection
+        pass
 
 
 @app.post("/v1/daas/upload", status_code=status.HTTP_200_OK)
