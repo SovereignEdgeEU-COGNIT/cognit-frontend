@@ -11,7 +11,8 @@ DEFAULT = {
     'one_xmlrpc': 'http://localhost:2633/RPC2',
     'ai_orchestrator_endpoint': 'http://localhost:4567',
     'default_cluster': 0,
-    'log_level': 'info'
+    'log_level': 'info',
+    'db_path': '/root/cognit-frontend/database/device_cluster_assignment.db'
 }
 
 FALLBACK_MSG = 'Using default configuration'
@@ -55,3 +56,4 @@ PORT = config['port']
 LOG_LEVEL = config['log_level']
 AI_ORCHESTRATOR_ENDPOINT = config['ai_orchestrator_endpoint']
 DEFAULT_CLUSTER = config['default_cluster']
+DB_PATH = config['db_path']

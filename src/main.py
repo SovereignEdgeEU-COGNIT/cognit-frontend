@@ -6,13 +6,12 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from typing import Annotated, Any, List
 import uvicorn
 import re
-import requests
-import json
 import logging
 
 import cognit_conf as conf
 import biscuit_token as auth
 import opennebula as one
+import db_manager
 from cognit_models import AppRequirements, EdgeClusterFrontend, ExecSyncParams
 
 one.ONE_XMLRPC = conf.ONE_XMLRPC
@@ -22,6 +21,9 @@ if conf.LOG_LEVEL == 'debug':  # uvicorn run log parameter is ignored
     logger.setLevel(logging.DEBUG)
 
 # TODO: Update design doc
+
+# Initialize database
+db = db_manager.DBManager(conf.DB_PATH)
 
 app = FastAPI(title='Cognit Frontend', version='0.1.0')
 
