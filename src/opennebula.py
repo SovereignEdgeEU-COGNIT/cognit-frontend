@@ -1,3 +1,5 @@
+import ast
+from typing import Any
 import pyone
 from fastapi import HTTPException, status
 from haversine import haversine, Unit
@@ -73,22 +75,58 @@ def function_get(one: pyone.OneServer, document_id: int) -> dict:
     document = document_get(one, document_id, 'FUNCTION')
     return dict(document.TEMPLATE)
 
-def clusters_ids_get(one: pyone.OneServer, geolocation: str, flavour: str) -> list[int]:
+def clusters_ids_get(
+    one: pyone.OneServer,
+    geolocation: str,
+    flavour: str,
+    is_confidential: bool | None = None,
+    providers: list[str] | None = None,
+    target_cardinality: int | None = None,
+) -> list[int]:
+    """Return cluster IDs sorted by distance and filtered by optional capabilities.
+
+    Parameters:
+        one: Authenticated OpenNebula client.
+        geolocation: Device coordinates formatted as "lat,lon".
+        flavour: Requested runtime flavour.
+        is_confidential: When true, only confidential clusters are considered.
+        providers: Optional provider identifiers acceptable for the request.
+        target_cardinality: Target cardinality of the cluster.
+
+    Returns:
+        List of cluster IDs ordered by distance from the device location.
+    """
+
     clusters = one.clusterpool.info()
     device_geolocation = _parse_geolocation(geolocation)
+    requested_providers = set(providers or [])
     cluster_distances = []
 
     for cluster in clusters.CLUSTER:
-        # Filter clusters by flavour support
-        flavours_str = cluster.TEMPLATE.get("FLAVOURS")
-        
-        # If FLAVOURS key doesn't exist or is empty, keep the cluster
-        if flavours_str:
-            supported_flavours = flavours_str.split(",")
-            if flavour not in supported_flavours:
+        template = cluster.TEMPLATE
+
+        supported_flavours = [item.strip() for item in template.get("FLAVOURS").split(",") if item.strip()]
+
+        if flavour not in supported_flavours:
+            continue
+
+        if is_confidential:
+            if template.get("IS_CONFIDENTIAL"):
+                cluster_confidential = True if template.get("IS_CONFIDENTIAL").lower() == "true" else False
+                if is_confidential != cluster_confidential:
+                    continue
+
+        if requested_providers:
+            cluster_providers = template.get("PROVIDERS").split(",")
+            if set(cluster_providers).isdisjoint(requested_providers):
                 continue
-            
-        cluster_geolocation = cluster.TEMPLATE.get("GEOLOCATION")
+
+        if target_cardinality is not None:
+            cluster__max_capacity = int(template.get("MAX_CAPACITY")) if template.get("MAX_CAPACITY") else None)
+            if target_cardinality > cluster__max_capacity:
+                continue
+
+        cluster_geolocation = template.get("GEOLOCATION")
         if cluster_geolocation:
             try:
                 cluster_coords = _parse_geolocation(cluster_geolocation)

@@ -100,14 +100,21 @@ async def get_edge_cluster_frontends(
 
     client = authorize(token)
     app_reqs = one.app_requirement_get(client, id)
-
+    print("App requirements:", app_reqs)
     device_id: Optional[str] = app_reqs.get("ID")
 
     # Backward compatibility: fallback to cluster selection if ID is not in the app requirements
     if not device_id or device_id == 'None':
         print("No device ID found in the app requirements")
         flavour = app_reqs['FLAVOUR']
-        cluster_ids = one.clusters_ids_get(client, app_reqs['GEOLOCATION'], flavour)
+        cluster_ids = one.clusters_ids_get(
+            client,
+            app_reqs['GEOLOCATION'],
+            flavour,
+            app_reqs.get('IS_CONFIDENTIAL'),
+            app_reqs.get('PROVIDERS'),
+            app_reqs.get('MAX_CAPACITY'),
+        )
         clusters = []
         for cluster_id in cluster_ids:
             clusters.append(one.cluster_get(client, cluster_id, flavour))
@@ -130,7 +137,7 @@ async def get_edge_cluster_frontends(
         cluster = one.cluster_get(client, tmp_cluster_id, flavour)
         return [cluster]
     else:
-        # Update the cached assignment with the new app requirements, new cluster and persist the assignment
+        # Update the ne.clcached assignment with the new app requirements, new cluster and persist the assignment
         # TODO: Implement cluster selection
         pass
 
