@@ -12,7 +12,7 @@ DEFAULT = {
     'ai_orchestrator_endpoint': 'http://localhost:4567',
     'default_cluster': 0,
     'log_level': 'info',
-    'db_path': '/root/cognit-frontend/database/device_cluster_assignment.db'
+    'db_path': './database/device_cluster_assignment.db'
 }
 
 FALLBACK_MSG = 'Using default configuration'
