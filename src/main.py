@@ -118,7 +118,6 @@ async def get_edge_cluster_frontends(
         clusters = []
         for cluster_id in cluster_ids:
             clusters.append(one.cluster_get(client, cluster_id, flavour))
-        print("Clusters:", clusters)
         return clusters
 
     cached_device_assignment = db.get_device_assignment(device_id)
@@ -129,17 +128,52 @@ async def get_edge_cluster_frontends(
         return [cluster]
     elif not cached_device_assignment:
         print("No cached device assignment found")
-        # Insert a new row in the database with the new app requirements, new cluster and persist the assignment
-        # TODO: Implement cluster selection
-        tmp_cluster_id = 0
+        # Select the best cluster for this device based on requirements
         flavour = app_reqs['FLAVOUR']
-        db.insert_device_assignment(device_id, tmp_cluster_id, flavour, id, app_reqs)
-        cluster = one.cluster_get(client, tmp_cluster_id, flavour)
+        cluster_ids = one.clusters_ids_get(
+            client,
+            app_reqs['GEOLOCATION'],
+            flavour,
+            app_reqs.get('IS_CONFIDENTIAL'),
+            app_reqs.get('PROVIDERS')
+        )
+
+        if not cluster_ids:
+            # No clusters match the requirements
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No clusters available matching the requirements"
+            )
+
+        # Use the best (closest) cluster
+        selected_cluster_id = cluster_ids[0]
+        db.insert_device_assignment(device_id, str(selected_cluster_id), flavour, str(id), app_reqs)
+        cluster = one.cluster_get(client, selected_cluster_id, flavour)
         return [cluster]
     else:
-        # Update the ne.clcached assignment with the new app requirements, new cluster and persist the assignment
-        # TODO: Implement cluster selection
-        pass
+        # App requirements changed, need to find a new cluster
+        print("App requirements changed, selecting new cluster")
+        flavour = app_reqs['FLAVOUR']
+        cluster_ids = one.clusters_ids_get(
+            client,
+            app_reqs['GEOLOCATION'],
+            flavour,
+            app_reqs.get('IS_CONFIDENTIAL'),
+            app_reqs.get('PROVIDERS')
+        )
+
+        if not cluster_ids:
+            # No clusters match the new requirements
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No clusters available matching the new requirements"
+            )
+
+        # Use the best (closest) cluster
+        selected_cluster_id = cluster_ids[0]
+        db.update_device_assignment(device_id, str(selected_cluster_id), flavour, str(id), app_reqs)
+        cluster = one.cluster_get(client, selected_cluster_id, flavour)
+        return [cluster]
 
 
 @app.post("/v1/daas/upload", status_code=status.HTTP_200_OK)
