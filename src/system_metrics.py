@@ -174,7 +174,7 @@ def calculate_estimated_load(device_count: int) -> float:
         device_count: Number of distinct devices currently registered in the system
     
     Returns:
-        Estimated load value
+        Estimated load value in range [0.0, 1.0]
     """
     service_metrics = collect_system_metrics()
     
@@ -186,20 +186,21 @@ def calculate_estimated_load(device_count: int) -> float:
     if total_backlog > 0:
         return 1.0
     
-    total_cpu = 0.0
+    total_cpu_percent = 0.0
     for service in service_metrics:
         if service["avg_cpu"] is not None:
-            total_cpu += service["avg_cpu"]
+            total_cpu_percent += service["avg_cpu"]
     
-    if total_cpu == 0:
+    if total_cpu_percent == 0:
         return 0.0
     
     if device_count == 0:
         return 1.0
     
-    estimated_load = total_cpu / device_count
+    # Normalize CPU from percentage [0-100] to [0-1] and divide by device count
+    estimated_load = (total_cpu_percent / 100.0) / device_count
     
-    return estimated_load
+    return min(estimated_load, 1.0)
 
 
 def build_service_topology(services_data: list[dict]) -> dict:

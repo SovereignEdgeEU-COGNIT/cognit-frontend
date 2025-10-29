@@ -7,10 +7,11 @@ from typing import Optional, Dict, Any
 import cognit_conf as conf
 
 class DBManager:
-    def __init__(self, DB_PATH: str):
+    def __init__(self, DB_PATH: str, DB_CLEANUP_DAYS: int = conf.DB_CLEANUP_DAYS):
         self.DB_PATH = DB_PATH
         self._write_lock = threading.Lock()
         self.init_db()
+        self.DB_CLEANUP_DAYS = DB_CLEANUP_DAYS
         self.cleanup_old_records()
 
     @contextmanager
@@ -52,11 +53,11 @@ class DBManager:
                 cursor.execute(
                     "DELETE FROM device_cluster_assignment "
                     "WHERE last_seen <= datetime('now', '-' || ? || ' days')",
-                    (conf.DB_CLEANUP_DAYS,)
+                    (self.DB_CLEANUP_DAYS,)
                 )
                 deleted_count = cursor.rowcount
                 if deleted_count > 0:
-                    print(f"Cleaned up {deleted_count} old device assignments (>{conf.DB_CLEANUP_DAYS} days)")
+                    print(f"Cleaned up {deleted_count} old device assignments (>{self.DB_CLEANUP_DAYS} days)")
 
     def get_device_assignment(self, device_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve device cluster assignment from database.

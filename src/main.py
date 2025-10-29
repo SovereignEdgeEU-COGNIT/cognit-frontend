@@ -24,7 +24,7 @@ if conf.LOG_LEVEL == 'debug':  # uvicorn run log parameter is ignored
 # TODO: Update design doc
 
 # Initialize database
-db = db_manager.DBManager(conf.DB_PATH)
+db = db_manager.DBManager(conf.DB_PATH, conf.DB_CLEANUP_DAYS)
 
 app = FastAPI(title='Cognit Frontend', version='0.1.0')
 

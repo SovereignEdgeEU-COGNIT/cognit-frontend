@@ -122,9 +122,8 @@ def test_case_3_different_app_reqs(db):
     # Simulate updating with new requirements (what our endpoint does)
     new_cluster_id = 7  # Mock newly selected cluster
     new_app_req_id = 456  # Mock new OpenNebula document ID
-    estimated_load = 0.5
 
-    db.update_device_assignment(test_device_id, new_cluster_id, app_reqs_2['FLAVOUR'], new_app_req_id, app_reqs_2, estimated_load)
+    db.update_device_assignment(test_device_id, new_cluster_id, app_reqs_2['FLAVOUR'], new_app_req_id, app_reqs_2)
 
     # Verify assignment was updated
     assignment_after = db.get_device_assignment(test_device_id)
