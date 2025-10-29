@@ -167,6 +167,41 @@ def has_frontend_role(service: Dict) -> bool:
         return False
 
 
+def calculate_estimated_load(device_count: int) -> float:
+    """Calculate estimated load based on system metrics and device count.
+    
+    Args:
+        device_count: Number of distinct devices currently registered in the system
+    
+    Returns:
+        Estimated load value
+    """
+    service_metrics = collect_system_metrics()
+    
+    if not service_metrics:
+        return 0.0
+    
+    total_backlog = sum(service["queue_total"] for service in service_metrics)
+    
+    if total_backlog > 0:
+        return 1.0
+    
+    total_cpu = 0.0
+    for service in service_metrics:
+        if service["avg_cpu"] is not None:
+            total_cpu += service["avg_cpu"]
+    
+    if total_cpu == 0:
+        return 0.0
+    
+    if device_count == 0:
+        return 1.0
+    
+    estimated_load = total_cpu / device_count
+    
+    return estimated_load
+
+
 def build_service_topology(services_data: list[dict]) -> dict:
     """Build service topology mapping for SDK from processed service data.
 

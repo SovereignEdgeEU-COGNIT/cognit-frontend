@@ -134,3 +134,16 @@ class DBManager:
                 'UPDATE device_cluster_assignment SET last_seen = ? WHERE device_id = ?',
                 (now, device_id)
             )
+
+
+    def get_distinct_device_count(self) -> int:
+        """Get count of distinct device_ids in the database.
+        
+        Returns:
+            Number of unique devices registered in the system
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(DISTINCT device_id) FROM device_cluster_assignment')
+            result = cursor.fetchone()
+            return result[0] if result else 0
