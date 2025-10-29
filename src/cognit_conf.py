@@ -12,7 +12,15 @@ DEFAULT = {
     'ai_orchestrator_endpoint': 'http://localhost:4567',
     'default_cluster': 0,
     'log_level': 'info',
-    'db_path': './database/device_cluster_assignment.db'
+    'db_path': './database/device_cluster_assignment.db',
+    # Database configuration for one-aiops monitoring
+    'one_db_host': '127.0.0.1',
+    'one_db_port': 3306,
+    'one_db_database': 'opennebula',
+    'one_db_user': 'oneadmin',
+    'one_db_password': 'opennebula',
+    # Metrics configuration
+    'metrics_lookback_minutes': 5,
 }
 
 FALLBACK_MSG = 'Using default configuration'
@@ -57,3 +65,38 @@ LOG_LEVEL = config['log_level']
 AI_ORCHESTRATOR_ENDPOINT = config['ai_orchestrator_endpoint']
 DEFAULT_CLUSTER = config['default_cluster']
 DB_PATH = config['db_path']
+
+# Database configuration for one-aiops monitoring
+ONE_DB_HOST = config['one_db_host']
+ONE_DB_PORT = config['one_db_port']
+ONE_DB_DATABASE = config['one_db_database']
+ONE_DB_USER = config['one_db_user']
+ONE_DB_PASSWORD = config['one_db_password']
+
+# Metrics configuration
+METRICS_LOOKBACK_MINUTES = config['metrics_lookback_minutes']
+
+# Database configuration dictionary for one-aiops SDK
+DB_CONFIG = {
+    'host': ONE_DB_HOST,
+    'port': ONE_DB_PORT,
+    'database': ONE_DB_DATABASE,
+    'user': ONE_DB_USER,
+    'password': ONE_DB_PASSWORD,
+}
+
+# FaaS metrics to collect (using MetricAttributes format)
+from pyoneai.core import Float, MetricAttributes, MetricType
+
+FAAS_METRICS = {
+    'cpu': MetricAttributes(
+        name='cpu',
+        type=MetricType.GAUGE,
+        dtype=Float(),
+    ),
+}
+
+# XPath mappings for custom metrics (if needed)
+METRIC_XPATH_MAPPING = {
+    'cpu': 'CPU',
+}
