@@ -75,8 +75,8 @@ def collect_system_metrics() -> List[Dict[str, Any]]:
     """
     Collect per-service metrics for estimated load calculation.
     For each OneFlow service with Frontend role, collects:
-    - queue_total from the Frontend VM (automatically summed by SDK)
-    - average CPU usage across all FaaS VMs (automatically averaged by SDK)
+    - queue_total: LATEST value from Frontend role (summed across Frontend VMs)
+    - avg_cpu: LATEST average CPU across all FaaS VMs (averaged by SDK)
 
     Returns:
         List of dicts with service metrics:
@@ -229,27 +229,26 @@ def create_service_monitoring_config(service_topology: dict) -> MonitoringConfig
 def get_service_metrics(
     service_id: int,
     service_name: str,
-    monitoring_config: MonitoringConfig,
-    lookback_minutes: int = conf.METRICS_LOOKBACK_MINUTES
+    monitoring_config: MonitoringConfig
 ) -> dict[str, Any]:
-    """Fetch metrics for a specific service using SDK service aggregation.
+    """Fetch latest metrics for a specific service using SDK service aggregation.
 
     Args:
         service_id: OneFlow service ID
         service_name: Service name for logging
         monitoring_config: Service monitoring configuration
-        lookback_minutes: Time window in minutes
     Returns:
-        Dict with queue_total and avg_cpu metrics
+        Dict with queue_total (latest value) and avg_cpu (latest average across FaaS VMs)
     """
+    # Get only the latest monitoring point (last 2 minutes to ensure we get at least one sample)
     end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=lookback_minutes)
+    start_time = end_time - timedelta(minutes=2)
     period = Period(slice(start_time, end_time, timedelta(minutes=1)))
 
     results = {"queue_total": 0, "avg_cpu": None}
 
     try:
-        # Get Frontend role metrics (queue_total is automatically summed)
+        # Get Frontend role metrics
         frontend_role = Entity(
             uid=EntityUID(type=EntityType.SERVICE_ROLE, id=f"{service_id}_Frontend"),
             metrics={
@@ -265,10 +264,11 @@ def get_service_metrics(
 
         queue_data = frontend_role["queue_total"][period]
         if queue_data is not None and queue_data.values.size > 0:
-            queue_sum = queue_data.values.flatten().sum()
-            if not math.isnan(queue_sum):
-                results["queue_total"] = int(queue_sum)
-                print(f"Service {service_id} ({service_name}): queue_total={results['queue_total']}")
+            # Get the LATEST (last) value from the time series
+            latest_queue = queue_data.values.flatten()[-1]
+            if not math.isnan(latest_queue):
+                results["queue_total"] = int(latest_queue)
+                print(f"Service {service_id} ({service_name}): queue_total={results['queue_total']} (latest)")
             else:
                 print(f"Service {service_id} ({service_name}): queue_total=NaN (no data)")
 
@@ -276,7 +276,7 @@ def get_service_metrics(
         print(f"Warning: Could not fetch queue_total for service {service_id}: {e}")
 
     try:
-        # Get FaaS role metrics (CPU is automatically averaged)
+        # Get FaaS role metrics (CPU is automatically averaged across FaaS VMs)
         faas_role = Entity(
             uid=EntityUID(type=EntityType.SERVICE_ROLE, id=f"{service_id}_FaaS"),
             metrics={
@@ -292,10 +292,11 @@ def get_service_metrics(
 
         cpu_data = faas_role["cpu"][period]
         if cpu_data is not None and cpu_data.values.size > 0:
-            cpu_avg = cpu_data.values.flatten().mean()
-            if not math.isnan(cpu_avg):
-                results["avg_cpu"] = float(cpu_avg)
-                print(f"Service {service_id} ({service_name}): avg_cpu={results['avg_cpu']:.2f}%")
+            # Get the LATEST (last) average CPU across all FaaS VMs
+            latest_cpu = cpu_data.values.flatten()[-1]
+            if not math.isnan(latest_cpu):
+                results["avg_cpu"] = float(latest_cpu)
+                print(f"Service {service_id} ({service_name}): avg_cpu={results['avg_cpu']:.2f}% (latest)")
             else:
                 print(f"Service {service_id} ({service_name}): avg_cpu=NaN (no data)")
 
