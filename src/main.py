@@ -13,6 +13,7 @@ import biscuit_token as auth
 import opennebula as one
 import db_manager
 from cognit_models import AppRequirements, EdgeClusterFrontend, ExecSyncParams
+from system_metrics import calculate_estimated_load
 
 one.ONE_XMLRPC = conf.ONE_XMLRPC
 
@@ -128,6 +129,9 @@ async def get_edge_cluster_frontends(
         return [cluster]
     elif not cached_device_assignment:
         print("No cached device assignment found")
+        device_count = db.get_distinct_device_count()
+        estimated_load = calculate_estimated_load(device_count)
+        print(f"Estimated load calculated: {estimated_load:.2f} (device_count={device_count})")
         # Select the best cluster for this device based on requirements
         flavour = app_reqs['FLAVOUR']
         cluster_ids = one.clusters_ids_get(
@@ -147,7 +151,7 @@ async def get_edge_cluster_frontends(
 
         # Use the best (closest) cluster
         selected_cluster_id = cluster_ids[0]
-        db.insert_device_assignment(device_id, str(selected_cluster_id), flavour, str(id), app_reqs)
+        db.insert_device_assignment(device_id, selected_cluster_id, flavour, id, app_reqs, estimated_load)
         cluster = one.cluster_get(client, selected_cluster_id, flavour)
         return [cluster]
     else:
@@ -171,7 +175,7 @@ async def get_edge_cluster_frontends(
 
         # Use the best (closest) cluster
         selected_cluster_id = cluster_ids[0]
-        db.update_device_assignment(device_id, str(selected_cluster_id), flavour, str(id), app_reqs)
+        db.update_device_assignment(device_id, selected_cluster_id, flavour, id, app_reqs)
         cluster = one.cluster_get(client, selected_cluster_id, flavour)
         return [cluster]
 

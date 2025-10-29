@@ -13,6 +13,7 @@ DEFAULT = {
     'default_cluster': 0,
     'log_level': 'info',
     'db_path': './database/device_cluster_assignment.db',
+    'db_cleanup_days': 30,
     # Database configuration for one-aiops monitoring
     'one_db_host': '127.0.0.1',
     'one_db_port': 3306,
@@ -65,6 +66,7 @@ LOG_LEVEL = config['log_level']
 AI_ORCHESTRATOR_ENDPOINT = config['ai_orchestrator_endpoint']
 DEFAULT_CLUSTER = config['default_cluster']
 DB_PATH = config['db_path']
+DB_CLEANUP_DAYS = config['db_cleanup_days']
 
 # Database configuration for one-aiops monitoring
 ONE_DB_HOST = config['one_db_host']

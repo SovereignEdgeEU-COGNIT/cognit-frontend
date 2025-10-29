@@ -65,7 +65,7 @@ class TestDBManagerDeviceCount:
         self.test_devices = ["test_load_001", "test_load_002", "test_load_003"]
         
         for i, device_id in enumerate(self.test_devices):
-            self.db.insert_device_assignment(device_id, "0", "OVH", str(i+1), {})
+            self.db.insert_device_assignment(device_id, 0, "OVH", i+1, {}, 1.0)
         
         count = self.db.get_distinct_device_count()
         assert count >= len(self.test_devices)
@@ -73,10 +73,10 @@ class TestDBManagerDeviceCount:
     def test_duplicate_counted_once(self):
         self.test_devices = ["test_load_004"]
         
-        self.db.insert_device_assignment(self.test_devices[0], "0", "OVH", "1", {})
+        self.db.insert_device_assignment(self.test_devices[0], 0, "OVH", 1, {}, 1.0)
         initial_count = self.db.get_distinct_device_count()
         
-        self.db.update_device_assignment(self.test_devices[0], "1", "OVH", "2", {})
+        self.db.update_device_assignment(self.test_devices[0], 1, "OVH", 2, {}, 1.0)
         updated_count = self.db.get_distinct_device_count()
         
         assert initial_count == updated_count
