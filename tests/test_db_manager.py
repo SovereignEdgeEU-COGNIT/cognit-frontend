@@ -14,15 +14,6 @@ from src.db_manager import DBManager
 TEST_DB_PATH = './database/test_device_cluster_assignment.db'
 
 
-@pytest.fixture(scope="session", autouse=True)
-def reset_singleton():
-    DBManager._instance = None
-    DBManager._initialized = False
-    yield
-    DBManager._instance = None
-    DBManager._initialized = False
-
-
 @pytest.fixture(scope="session")
 def db():
     return DBManager(TEST_DB_PATH)

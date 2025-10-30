@@ -20,13 +20,14 @@ DEFAULT = {
     'one_db_database': 'opennebula',
     'one_db_user': 'oneadmin',
     'one_db_password': 'opennebula',
-    # Metrics configuration
-    'metrics_lookback_minutes': 5,
+    # Estimated load daemon configuration
+    'estimated_load_update_interval_seconds': 30,
 }
 
 FALLBACK_MSG = 'Using default configuration'
 
 
+user_config = {}
 if os.path.exists(PATH):
     with open(PATH, 'r') as file:
         try:
@@ -35,10 +36,8 @@ if os.path.exists(PATH):
                 user_config = {}
         except yaml.YAMLError as e:
             print(f"{e}\n{FALLBACK_MSG}")
-            config = DEFAULT
 else:
     print(f"{PATH} not found. {FALLBACK_MSG}.")
-    config = DEFAULT
 
 config = DEFAULT.copy()
 config.update(user_config)
@@ -75,8 +74,8 @@ ONE_DB_DATABASE = config['one_db_database']
 ONE_DB_USER = config['one_db_user']
 ONE_DB_PASSWORD = config['one_db_password']
 
-# Metrics configuration
-METRICS_LOOKBACK_MINUTES = config['metrics_lookback_minutes']
+# Estimated load daemon configuration
+ESTIMATED_LOAD_UPDATE_INTERVAL_SECONDS = config['estimated_load_update_interval_seconds']
 
 # Database configuration dictionary for one-aiops SDK
 DB_CONFIG = {
