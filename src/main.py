@@ -4,6 +4,7 @@ from fastapi.responses import RedirectResponse
 from fastapi import FastAPI, status, HTTPException, Header, Path, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from typing import Annotated, Any, List, Optional
+from contextlib import asynccontextmanager
 import uvicorn
 import re
 import logging
@@ -28,14 +29,21 @@ if conf.LOG_LEVEL == 'debug':  # uvicorn run log parameter is ignored
 # Initialize database
 db = db_manager.DBManager(conf.DB_PATH, conf.DB_CLEANUP_DAYS)
 
-app = FastAPI(title='Cognit Frontend', version='0.1.0')
 
-
-@app.on_event("startup")
-async def startup_event():
-    """Start background daemon for estimated load updates."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for FastAPI startup/shutdown events."""
     logger.info("Starting estimated load daemon background task")
-    asyncio.create_task(estimated_load_daemon.daemon_loop())
+    task = asyncio.create_task(estimated_load_daemon.daemon_loop())
+    yield
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        logger.info("Estimated load daemon stopped")
+
+
+app = FastAPI(title='Cognit Frontend', version='0.1.0', lifespan=lifespan)
 
 
 @app.get("/")
