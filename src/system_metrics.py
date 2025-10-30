@@ -1,6 +1,6 @@
 """System-wide metrics collection for estimated load calculation."""
 
-from typing import Tuple, List, Dict, Any
+from typing import List, Dict, Any
 import json
 import math
 import subprocess
@@ -18,7 +18,7 @@ def run_command(cmd: list[str]) -> dict:
 
 
 def get_oneflow_services() -> List[Dict[str, Any]]:
-    """Get all OneFlow services using CLI (pyone doesn't support services)."""
+    """Get all OneFlow services via CLI."""
     try:
         return run_command(["oneflow", "list", "--json"])
     except Exception as e:
@@ -26,61 +26,13 @@ def get_oneflow_services() -> List[Dict[str, Any]]:
         return []
 
 
-def get_vm_details(vm_id: str) -> Dict[str, Any]:
-    """Get VM details using CLI."""
-    try:
-        return run_command(["onevm", "show", vm_id, "--json"])
-    except Exception as e:
-        print(f"Error fetching VM {vm_id}: {e}")
-        return {}
-
-
-def extract_queue_total_from_frontend(service: Dict) -> int:
-    """Extract QUEUE_TOTAL from frontend VM of a service.
-
-    Returns:
-        - Queue total (int) if service has Frontend role
-        - -1 if service has no Frontend role
-        - 0 if Frontend role exists but no queue/monitoring data
-    """
-    try:
-        body = service.get("TEMPLATE", {}).get("BODY", {})
-        roles = body.get("roles", [])
-
-        frontend_role = next((r for r in roles if r.get("name") == "Frontend"), None)
-        if not frontend_role:
-            return -1  # No Frontend role
-
-        nodes = frontend_role.get("nodes", [])
-        if not nodes:
-            return 0  # Frontend role exists but no nodes
-
-        vm_id = str(nodes[0].get("deploy_id"))
-        if not vm_id:
-            return 0  # Frontend role exists but no VM
-
-        vm_data = get_vm_details(vm_id)
-        vm = vm_data.get("VM", {})
-        monitoring = vm.get("MONITORING", {})
-
-        queue_total_str = monitoring.get("QUEUE_TOTAL")
-        return int(queue_total_str) if queue_total_str else 0
-
-    except Exception as e:
-        print(f"Error extracting queue total from service {service.get('ID')}: {e}")
-        return 0
-
-
 def collect_system_metrics() -> List[Dict[str, Any]]:
-    """
-    Collect per-service metrics for estimated load calculation.
-    For each OneFlow service with Frontend role, collects:
-    - queue_total: LATEST value from Frontend role (summed across Frontend VMs)
-    - avg_cpu: LATEST average CPU across all FaaS VMs (averaged by SDK)
-
+    """Collect metrics for each OneFlow service with Frontend role.
+    
     Returns:
-        List of dicts with service metrics:
-        [{"service_id": int, "service_name": str, "queue_total": int, "avg_cpu": float}]
+        List of dicts: [{"service_id": int, "service_name": str, "queue_total": int, "avg_cpu": float}]
+        - queue_total: Latest sum across Frontend VMs (SDK aggregates at role level)
+        - avg_cpu: Latest average across FaaS VMs (SDK aggregates at role level)
     """
     all_services = get_oneflow_services()
 
@@ -168,13 +120,16 @@ def has_frontend_role(service: Dict) -> bool:
 
 
 def calculate_estimated_load(device_count: int) -> float:
-    """Calculate estimated load based on system metrics and device count.
+    """Calculate estimated load from system metrics and device count.
     
     Args:
-        device_count: Number of distinct devices currently registered in the system
+        device_count: Number of distinct devices in system
     
     Returns:
-        Estimated load value in range [0.0, 1.0]
+        Estimated load in range [0.0, 1.0]
+        - 1.0 if any backlog exists
+        - (total_cpu% / 100) / device_count otherwise
+        - Capped at 1.0 maximum
     """
     service_metrics = collect_system_metrics()
     
@@ -204,12 +159,14 @@ def calculate_estimated_load(device_count: int) -> float:
 
 
 def build_service_topology(services_data: list[dict]) -> dict:
-    """Build service topology mapping for SDK from processed service data.
-
+    """Build service topology mapping for SDK role-level aggregation.
+    
     Args:
-        services_data: List of processed service dictionaries
+        services_data: List of service dicts with frontend_vms and faas_vms
+    
     Returns:
         Dict mapping service_id -> {role_name: [vm_ids]}
+        Example: {70: {"Frontend": [810], "FaaS": [811, 812]}}
     """
     topology = {}
 
@@ -239,12 +196,14 @@ def build_service_topology(services_data: list[dict]) -> dict:
 
 
 def create_service_monitoring_config(service_topology: dict) -> MonitoringConfig:
-    """Create monitoring configuration for service aggregation.
-
+    """Create MonitoringConfig for SDK role-level aggregation.
+    
     Args:
-        service_topology: Service topology mapping
+        service_topology: Dict mapping service_id -> {role_name: [vm_ids]}
+    
     Returns:
-        MonitoringConfig with service_aggregating backend
+        MonitoringConfig with service_aggregating backend.
+        SDK uses service_topology to know which VMs belong to each role.
     """
     vm_monitoring = MonitoringConfig.opennebula_db_mysql(
         **conf.DB_CONFIG,
@@ -267,14 +226,19 @@ def get_service_metrics(
     service_name: str,
     monitoring_config: MonitoringConfig
 ) -> dict[str, Any]:
-    """Fetch latest metrics for a specific service using SDK service aggregation.
-
+    """Fetch latest metrics for a service using SDK role-level aggregation.
+    
+    SDK aggregates metrics automatically:
+    - Frontend role: EntityUID(id="{service_id}_Frontend") → SDK finds VMs in topology, sums queue_total
+    - FaaS role: EntityUID(id="{service_id}_FaaS") → SDK finds VMs in topology, averages CPU
+    
     Args:
         service_id: OneFlow service ID
         service_name: Service name for logging
-        monitoring_config: Service monitoring configuration
+        monitoring_config: Config with service_topology schema
+    
     Returns:
-        Dict with queue_total (latest value) and avg_cpu (latest average across FaaS VMs)
+        Dict with {"queue_total": int, "avg_cpu": float} (latest values, already aggregated)
     """
     # Get only the latest monitoring point (last 2 minutes to ensure we get at least one sample)
     end_time = datetime.now()
