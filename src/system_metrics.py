@@ -1,5 +1,6 @@
 """System-wide metrics collection for estimated load calculation."""
 
+import logging
 from typing import List, Dict, Any
 import json
 import math
@@ -10,6 +11,7 @@ from pyoneai.core import Float, MetricAttributes, MetricType
 from pyoneai.core.time import Period
 import cognit_conf as conf
 
+logger = logging.getLogger("uvicorn")
 
 def run_command(cmd: list[str]) -> dict:
     """Execute OpenNebula CLI command and parse JSON output."""
@@ -22,7 +24,7 @@ def get_oneflow_services() -> List[Dict[str, Any]]:
     try:
         return run_command(["oneflow", "list", "--json"])
     except Exception as e:
-        print(f"Error fetching OneFlow services: {e}")
+        logger.error(f"Error fetching OneFlow services: {e}")
         return []
 
 
@@ -75,7 +77,7 @@ def collect_system_metrics() -> List[Dict[str, Any]]:
                             elif role_name == "FaaS":
                                 faas_vms.append(vm_info)
             except Exception as e:
-                print(f"Warning: Could not extract VM info from service {service_id}: {e}")
+                logger.warning(f"Warning: Could not extract VM info from service {service_id}: {e}")
 
             services_data.append({
                 "service_id": service_id,
@@ -104,7 +106,7 @@ def collect_system_metrics() -> List[Dict[str, Any]]:
             })
 
     except Exception as e:
-        print(f"Error collecting system metrics: {e}")
+        logger.error(f"Error collecting system metrics: {e}")
 
     return service_metrics
 
@@ -268,12 +270,12 @@ def get_service_metrics(
             latest_queue = queue_data.values.flatten()[-1]
             if not math.isnan(latest_queue):
                 results["queue_total"] = int(latest_queue)
-                print(f"Service {service_id} ({service_name}): queue_total={results['queue_total']} (latest)")
+                logger.info(f"Service {service_id} ({service_name}): queue_total={results['queue_total']} (latest)")
             else:
-                print(f"Service {service_id} ({service_name}): queue_total=NaN (no data)")
+                logger.info(f"Service {service_id} ({service_name}): queue_total=NaN (no data)")
 
     except Exception as e:
-        print(f"Warning: Could not fetch queue_total for service {service_id}: {e}")
+        logger.warning(f"Warning: Could not fetch queue_total for service {service_id}: {e}")
 
     try:
         # Get FaaS role metrics (CPU is automatically averaged across FaaS VMs)
@@ -296,11 +298,11 @@ def get_service_metrics(
             latest_cpu = cpu_data.values.flatten()[-1]
             if not math.isnan(latest_cpu):
                 results["sum_cpu_faas_role"] = float(latest_cpu)
-                print(f"Service {service_id} ({service_name}): sum_cpu_faas_role={results['sum_cpu_faas_role']:.2f}% (latest)")
+                logger.info(f"Service {service_id} ({service_name}): sum_cpu_faas_role={results['sum_cpu_faas_role']:.2f}% (latest)")
             else:
-                print(f"Service {service_id} ({service_name}): sum_cpu_faas_role=NaN (no data)")
+                logger.info(f"Service {service_id} ({service_name}): sum_cpu_faas_role=NaN (no data)")
 
     except Exception as e:
-        print(f"Warning: Could not fetch sum_cpu_faas_role for service {service_id}: {e}")
+        logger.warning(f"Warning: Could not fetch sum_cpu_faas_role for service {service_id}: {e}")
 
     return results

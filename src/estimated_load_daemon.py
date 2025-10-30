@@ -1,6 +1,7 @@
 """Background daemon for updating estimated load for all devices."""
 
 import asyncio
+import importlib
 import logging
 import cognit_conf as conf
 import db_manager
@@ -63,7 +64,9 @@ async def daemon_loop() -> None:
     
     while True:
         try:
+            importlib.reload(conf) # Reload config to get the latest interval in case it was changed
             interval = conf.ESTIMATED_LOAD_UPDATE_INTERVAL_SECONDS
+            logger.info(f"Daemon loop frequency: {interval} seconds")
             update_all_devices_estimated_load()
             await asyncio.sleep(interval)
         except Exception as e:
