@@ -1,18 +1,40 @@
 import json
 import sqlite3
 import threading
+import os
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import cognit_conf as conf
 
 class DBManager:
-    def __init__(self, DB_PATH: str, DB_CLEANUP_DAYS: int = conf.DB_CLEANUP_DAYS):
-        self.DB_PATH = DB_PATH
-        self._write_lock = threading.Lock()
-        self.init_db()
-        self.DB_CLEANUP_DAYS = DB_CLEANUP_DAYS
-        self.cleanup_old_records()
+    _instance = None
+    _lock = threading.Lock()
+    _initialized = False
+
+    def __new__(cls, DB_PATH: str = None, DB_CLEANUP_DAYS: int = None):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(DBManager, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self, DB_PATH: str = None, DB_CLEANUP_DAYS: int = None):
+        with DBManager._lock:
+            if DBManager._initialized:
+                return
+            
+            self.DB_PATH = DB_PATH if DB_PATH is not None else conf.DB_PATH
+            self.DB_CLEANUP_DAYS = DB_CLEANUP_DAYS if DB_CLEANUP_DAYS is not None else conf.DB_CLEANUP_DAYS
+            self._write_lock = threading.Lock()
+            
+            # Ensure database directory exists
+            db_dir = os.path.dirname(self.DB_PATH)
+            if db_dir and not os.path.exists(db_dir):
+                os.makedirs(db_dir, exist_ok=True)
+            
+            self.init_db()
+            self.cleanup_old_records()
+            DBManager._initialized = True
 
     @contextmanager
     def _get_connection(self):
@@ -192,3 +214,15 @@ class DBManager:
             cursor.execute('SELECT COUNT(DISTINCT device_id) FROM device_cluster_assignment')
             result = cursor.fetchone()
             return result[0] if result else 0
+
+    def get_all_device_ids(self) -> List[str]:
+        """Get all device_ids from the database.
+        
+        Returns:
+            List of all device_id values (empty list if no devices)
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT DISTINCT device_id FROM device_cluster_assignment')
+            rows = cursor.fetchall()
+            return [row[0] for row in rows] if rows else []

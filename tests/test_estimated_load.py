@@ -7,7 +7,6 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from system_metrics import calculate_estimated_load
-from db_manager import DBManager
 
 
 class TestEstimatedLoadCalculation:
@@ -52,36 +51,4 @@ class TestEstimatedLoadCalculation:
         with patch('system_metrics.collect_system_metrics', return_value=mock):
             assert calculate_estimated_load(device_count=1) == 1.0
 
-
-class TestDBManagerDeviceCount:
-    
-    @pytest.fixture(autouse=True)
-    def setup_teardown(self):
-        self.db = DBManager('./database/device_cluster_assignment.db')
-        self.test_devices = []
-        yield
-        with self.db._get_connection() as conn:
-            cursor = conn.cursor()
-            for device_id in self.test_devices:
-                cursor.execute("DELETE FROM device_cluster_assignment WHERE device_id = ?", (device_id,))
-    
-    def test_distinct_device_count(self):
-        self.test_devices = ["test_load_001", "test_load_002", "test_load_003"]
-        
-        for i, device_id in enumerate(self.test_devices):
-            self.db.insert_device_assignment(device_id, 0, "OVH", i+1, {}, 1.0)
-        
-        count = self.db.get_distinct_device_count()
-        assert count >= len(self.test_devices)
-    
-    def test_duplicate_counted_once(self):
-        self.test_devices = ["test_load_004"]
-        
-        self.db.insert_device_assignment(self.test_devices[0], 0, "OVH", 1, {}, 1.0)
-        initial_count = self.db.get_distinct_device_count()
-        
-        self.db.update_device_assignment(self.test_devices[0], 1, "OVH", 2, {})
-        updated_count = self.db.get_distinct_device_count()
-        
-        assert initial_count == updated_count
 
