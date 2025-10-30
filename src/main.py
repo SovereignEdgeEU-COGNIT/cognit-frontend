@@ -8,12 +8,14 @@ import uvicorn
 import re
 import logging
 
+import asyncio
 import cognit_conf as conf
 import biscuit_token as auth
 import opennebula as one
 import db_manager
 from cognit_models import AppRequirements, EdgeClusterFrontend, ExecSyncParams
 from system_metrics import calculate_estimated_load
+import estimated_load_daemon
 
 one.ONE_XMLRPC = conf.ONE_XMLRPC
 
@@ -27,6 +29,13 @@ if conf.LOG_LEVEL == 'debug':  # uvicorn run log parameter is ignored
 db = db_manager.DBManager(conf.DB_PATH, conf.DB_CLEANUP_DAYS)
 
 app = FastAPI(title='Cognit Frontend', version='0.1.0')
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Start background daemon for estimated load updates."""
+    logger.info("Starting estimated load daemon background task")
+    asyncio.create_task(estimated_load_daemon.daemon_loop())
 
 
 @app.get("/")
@@ -101,12 +110,11 @@ async def get_edge_cluster_frontends(
 
     client = authorize(token)
     app_reqs = one.app_requirement_get(client, id)
-    print("App requirements:", app_reqs)
     device_id: Optional[str] = app_reqs.get("ID")
 
     # Backward compatibility: fallback to cluster selection if ID is not in the app requirements
     if not device_id or device_id == 'None':
-        print("No device ID found in the app requirements")
+        logger.info("No device ID found in the app requirements")
         flavour = app_reqs['FLAVOUR']
         cluster_ids = one.clusters_ids_get(
             client,
@@ -123,15 +131,15 @@ async def get_edge_cluster_frontends(
 
     cached_device_assignment = db.get_device_assignment(device_id)
     if cached_device_assignment and cached_device_assignment['app_req_json'] == app_reqs:
-        print("App requirements are the same as the cached ones")
+        logger.info("App requirements are the same as the cached ones")
         db.update_last_seen(device_id)
         cluster = one.cluster_get(client, int(cached_device_assignment['cluster_id']), cached_device_assignment['flavour'])
         return [cluster]
     elif not cached_device_assignment:
-        print("No cached device assignment found")
+        logger.info("No cached device assignment found")
         device_count = db.get_distinct_device_count()
         estimated_load = calculate_estimated_load(device_count)
-        print(f"Estimated load calculated: {estimated_load:.2f} (device_count={device_count})")
+        logger.info(f"Estimated load calculated: {estimated_load:.2f} (device_count={device_count})")
         # Select the best cluster for this device based on requirements
         flavour = app_reqs['FLAVOUR']
         cluster_ids = one.clusters_ids_get(
@@ -156,7 +164,7 @@ async def get_edge_cluster_frontends(
         return [cluster]
     else:
         # App requirements changed, need to find a new cluster
-        print("App requirements changed, selecting new cluster")
+        logger.info("App requirements changed, selecting new cluster")
         flavour = app_reqs['FLAVOUR']
         cluster_ids = one.clusters_ids_get(
             client,

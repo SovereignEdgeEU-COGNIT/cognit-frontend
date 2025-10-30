@@ -128,7 +128,7 @@ def calculate_estimated_load(device_count: int) -> float:
     Returns:
         Estimated load in range [0.0, 1.0]
         - 1.0 if any backlog exists
-        - (total_cpu% / 100) / device_count otherwise
+        - (sum_cpu_faas_role of all services / 100) / device_count otherwise
         - Capped at 1.0 maximum
     """
     service_metrics = collect_system_metrics()
