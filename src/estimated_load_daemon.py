@@ -1,26 +1,29 @@
 """Background daemon for updating estimated load for all devices."""
 
 import asyncio
-import logging
 import os
 import yaml
 import cognit_conf as conf
 import db_manager
 from system_metrics import calculate_estimated_load
+from cognit_logger import setup_logging, get_logger
 
-logger = logging.getLogger("uvicorn")
+logger = get_logger(__name__)
 
 def load_interval() -> int:
-    """Load interval from config file."""
-    interval = conf.DEFAULT.get('estimated_load_update_interval_seconds', 30)
+    """Load interval from config file with priority: user_config > DEFAULT > 30."""
+    interval = None
     if os.path.exists(conf.PATH):
         try:
             with open(conf.PATH, 'r') as f:
                 user_config = yaml.safe_load(f) or {}
-                interval = user_config.get('estimated_load_update_interval_seconds', interval)
+                interval = user_config.get('estimated_load_update_interval_seconds')
         except Exception:
             pass
-    logger.info(f"Daemon loop frequency: {interval} seconds")
+    
+    if interval is None:
+        interval = conf.DEFAULT.get('estimated_load_update_interval_seconds', 30)
+    
     return interval
 
 def update_all_devices_estimated_load() -> None:
@@ -79,21 +82,17 @@ async def daemon_loop() -> None:
     
     while True:
         try:
-            # Read initial interval with priority: cognit-frontend.conf > conf.DEFAULT > 30
             interval = load_interval()
+            logger.info(f"Daemon loop frequency: {interval} seconds")
             update_all_devices_estimated_load()
             await asyncio.sleep(interval)
         except Exception as e:
             logger.error(f"Error in daemon loop: {e}")
             await asyncio.sleep(30)
 
-# Needed for testing purposes
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    # Read initial interval with priority: cognit-frontend.conf > conf.DEFAULT > 30
+    # Setup logging when running standalone
+    setup_logging("INFO")
     interval = load_interval()
     print("Starting estimated load daemon (press Ctrl+C to stop)...")
     print(f"Update interval: {interval} seconds")

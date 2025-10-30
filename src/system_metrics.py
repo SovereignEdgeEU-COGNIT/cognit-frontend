@@ -1,6 +1,5 @@
 """System-wide metrics collection for estimated load calculation."""
 
-import logging
 from typing import List, Dict, Any
 import json
 import math
@@ -10,8 +9,9 @@ from pyoneai.core import Entity, EntityType, EntityUID, MonitoringConfig
 from pyoneai.core import Float, MetricAttributes, MetricType
 from pyoneai.core.time import Period
 import cognit_conf as conf
+from cognit_logger import get_logger
 
-logger = logging.getLogger("uvicorn")
+logger = get_logger(__name__)
 
 def run_command(cmd: list[str]) -> dict:
     """Execute OpenNebula CLI command and parse JSON output."""

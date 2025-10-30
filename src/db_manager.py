@@ -6,6 +6,9 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 import cognit_conf as conf
+from cognit_logger import get_logger
+
+logger = get_logger(__name__)
 
 class DBManager:
     _instance = None
@@ -79,7 +82,7 @@ class DBManager:
                 )
                 deleted_count = cursor.rowcount
                 if deleted_count > 0:
-                    print(f"Cleaned up {deleted_count} old device assignments (>{self.DB_CLEANUP_DAYS} days)")
+                    logger.info(f"Cleaned up {deleted_count} old device assignments (>{self.DB_CLEANUP_DAYS} days)")
 
     def get_device_assignment(self, device_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve device cluster assignment from database.

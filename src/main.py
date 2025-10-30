@@ -7,7 +7,6 @@ from typing import Annotated, Any, List, Optional
 from contextlib import asynccontextmanager
 import uvicorn
 import re
-import logging
 
 import asyncio
 import cognit_conf as conf
@@ -17,12 +16,13 @@ import db_manager
 from cognit_models import AppRequirements, EdgeClusterFrontend, ExecSyncParams
 from system_metrics import calculate_estimated_load
 import estimated_load_daemon
+from cognit_logger import setup_logging, get_logger
 
 one.ONE_XMLRPC = conf.ONE_XMLRPC
 
-logger = logging.getLogger("uvicorn")
-if conf.LOG_LEVEL == 'debug':  # uvicorn run log parameter is ignored
-    logger.setLevel(logging.DEBUG)
+# Setup centralized logging
+setup_logging(conf.LOG_LEVEL)
+logger = get_logger(__name__)
 
 # TODO: Update design doc
 
