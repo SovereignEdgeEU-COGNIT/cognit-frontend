@@ -30,9 +30,9 @@ def collect_system_metrics() -> List[Dict[str, Any]]:
     """Collect metrics for each OneFlow service with Frontend role.
     
     Returns:
-        List of dicts: [{"service_id": int, "service_name": str, "queue_total": int, "avg_cpu": float}]
+        List of dicts: [{"service_id": int, "service_name": str, "queue_total": int, "sum_cpu_faas_role": float}]
         - queue_total: Latest sum across Frontend VMs (SDK aggregates at role level)
-        - avg_cpu: Latest average across FaaS VMs (SDK aggregates at role level)
+        - sum_cpu_faas_role: Latest average across FaaS VMs (SDK aggregates at role level)
     """
     all_services = get_oneflow_services()
 
@@ -100,7 +100,7 @@ def collect_system_metrics() -> List[Dict[str, Any]]:
                 "service_id": service_id,
                 "service_name": service_name,
                 "queue_total": metrics["queue_total"],
-                "avg_cpu": metrics["avg_cpu"],
+                "sum_cpu_faas_role": metrics["sum_cpu_faas_role"],
             })
 
     except Exception as e:
@@ -143,8 +143,8 @@ def calculate_estimated_load(device_count: int) -> float:
     
     total_cpu_percent = 0.0
     for service in service_metrics:
-        if service["avg_cpu"] is not None:
-            total_cpu_percent += service["avg_cpu"]
+        if service["sum_cpu_faas_role"] is not None:
+            total_cpu_percent += service["sum_cpu_faas_role"]
     
     if total_cpu_percent == 0:
         return 0.0
@@ -238,14 +238,14 @@ def get_service_metrics(
         monitoring_config: Config with service_topology schema
     
     Returns:
-        Dict with {"queue_total": int, "avg_cpu": float} (latest values, already aggregated)
+        Dict with {"queue_total": int, "sum_cpu_faas_role": float} (latest values, already aggregated)
     """
     # Get only the latest monitoring point (last 2 minutes to ensure we get at least one sample)
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=2)
     period = Period(slice(start_time, end_time, timedelta(minutes=1)))
 
-    results = {"queue_total": 0, "avg_cpu": None}
+    results = {"queue_total": 0, "sum_cpu_faas_role": 0}
 
     try:
         # Get Frontend role metrics
@@ -284,7 +284,7 @@ def get_service_metrics(
                     name="cpu",
                     type=MetricType.GAUGE,
                     dtype=Float(),
-                    aggregation_fn="avg"
+                    aggregation_fn="sum"
                 )
             },
             monitoring=monitoring_config
@@ -295,12 +295,12 @@ def get_service_metrics(
             # Get the LATEST (last) average CPU across all FaaS VMs
             latest_cpu = cpu_data.values.flatten()[-1]
             if not math.isnan(latest_cpu):
-                results["avg_cpu"] = float(latest_cpu)
-                print(f"Service {service_id} ({service_name}): avg_cpu={results['avg_cpu']:.2f}% (latest)")
+                results["sum_cpu_faas_role"] = float(latest_cpu)
+                print(f"Service {service_id} ({service_name}): sum_cpu_faas_role={results['sum_cpu_faas_role']:.2f}% (latest)")
             else:
-                print(f"Service {service_id} ({service_name}): avg_cpu=NaN (no data)")
+                print(f"Service {service_id} ({service_name}): sum_cpu_faas_role=NaN (no data)")
 
     except Exception as e:
-        print(f"Warning: Could not fetch avg_cpu for service {service_id}: {e}")
+        print(f"Warning: Could not fetch sum_cpu_faas_role for service {service_id}: {e}")
 
     return results
