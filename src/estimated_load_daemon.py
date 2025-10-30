@@ -1,14 +1,27 @@
 """Background daemon for updating estimated load for all devices."""
 
 import asyncio
-import importlib
 import logging
+import os
+import yaml
 import cognit_conf as conf
 import db_manager
 from system_metrics import calculate_estimated_load
 
 logger = logging.getLogger("uvicorn")
 
+def load_interval() -> int:
+    """Load interval from config file."""
+    interval = conf.DEFAULT.get('estimated_load_update_interval_seconds', 30)
+    if os.path.exists(conf.PATH):
+        try:
+            with open(conf.PATH, 'r') as f:
+                user_config = yaml.safe_load(f) or {}
+                interval = user_config.get('estimated_load_update_interval_seconds', interval)
+        except Exception:
+            pass
+    logger.info(f"Daemon loop frequency: {interval} seconds")
+    return interval
 
 def update_all_devices_estimated_load() -> None:
     """Update estimated_load for all devices in database.
@@ -56,6 +69,8 @@ def update_all_devices_estimated_load() -> None:
 
 async def daemon_loop() -> None:
     """Main daemon loop that runs periodically.
+
+    It is called in the lifespan context manager of fastapi app in main.py
     
     Checks configuration each iteration to support dynamic interval changes.
     Handles errors gracefully without stopping the daemon.
@@ -64,23 +79,24 @@ async def daemon_loop() -> None:
     
     while True:
         try:
-            importlib.reload(conf) # Reload config to get the latest interval in case it was changed
-            interval = conf.ESTIMATED_LOAD_UPDATE_INTERVAL_SECONDS
-            logger.info(f"Daemon loop frequency: {interval} seconds")
+            # Read initial interval with priority: cognit-frontend.conf > conf.DEFAULT > 30
+            interval = load_interval()
             update_all_devices_estimated_load()
             await asyncio.sleep(interval)
         except Exception as e:
             logger.error(f"Error in daemon loop: {e}")
-            await asyncio.sleep(conf.ESTIMATED_LOAD_UPDATE_INTERVAL_SECONDS)
+            await asyncio.sleep(30)
 
-
+# Needed for testing purposes
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
+    # Read initial interval with priority: cognit-frontend.conf > conf.DEFAULT > 30
+    interval = load_interval()
     print("Starting estimated load daemon (press Ctrl+C to stop)...")
-    print(f"Update interval: {conf.ESTIMATED_LOAD_UPDATE_INTERVAL_SECONDS} seconds")
+    print(f"Update interval: {interval} seconds")
     try:
         asyncio.run(daemon_loop())
     except KeyboardInterrupt:
