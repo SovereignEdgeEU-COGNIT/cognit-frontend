@@ -120,7 +120,7 @@ async def get_edge_cluster_frontends(
     app_reqs = one.app_requirement_get(client, id)
     device_id: Optional[str] = app_reqs.get("ID")
 
-    # Backward compatibility: fallback to cluster selection if ID is not in the app requirements
+    # Backward compatibility with the older device-runtime: fallback to cluster selection if ID is not in the app requirements
     if not device_id or device_id == 'None':
         logger.info("No device ID found in the app requirements")
         flavour = app_reqs['FLAVOUR']
