@@ -12,7 +12,7 @@ DEFAULT = {
     'ai_orchestrator_endpoint': 'http://localhost:4567',
     'default_cluster': 0,
     'log_level': 'info',
-    'db_path': './database/device_cluster_assignment.db',
+    'db_path': '/root/devices_local_database/device_cluster_assignment.db',
     'db_cleanup_days': 30,
     # Database configuration for one-aiops monitoring
     'one_db_host': '127.0.0.1',

@@ -121,8 +121,7 @@ class DBManager:
         cluster_id: int,
         flavour: str,
         app_req_id: int,
-        app_req_json: Dict[str, Any],
-        estimated_load: float = 1.0
+        app_req_json: Dict[str, Any]
     ) -> None:
         """Insert new device cluster assignment into database.
 
@@ -132,7 +131,6 @@ class DBManager:
             flavour: The device flavour
             app_req_id: The application requirement identifier
             app_req_json: Application requirements as JSON
-            estimated_load: Estimated load for the device (default 1.0)
         """
         with self._write_lock:
             with self._get_connection() as conn:
@@ -142,9 +140,9 @@ class DBManager:
 
                 cursor.execute(
                     'INSERT INTO device_cluster_assignment '
-                    '(device_id, cluster_id, flavour, last_seen, app_req_id, app_req_json, estimated_load) '
-                    'VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    (device_id, cluster_id, flavour, now, app_req_id, app_req_json_str, estimated_load)
+                    '(device_id, cluster_id, flavour, last_seen, app_req_id, app_req_json)'
+                    'VALUES (?, ?, ?, ?, ?, ?)',
+                    (device_id, cluster_id, flavour, now, app_req_id, app_req_json_str)
                 )
 
 

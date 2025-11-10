@@ -4,18 +4,14 @@ from fastapi.responses import RedirectResponse
 from fastapi import FastAPI, status, HTTPException, Header, Path, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from typing import Annotated, Any, List, Optional
-from contextlib import asynccontextmanager
 import uvicorn
 import re
 
-import asyncio
 import cognit_conf as conf
 import biscuit_token as auth
 import opennebula as one
 import db_manager
 from cognit_models import AppRequirements, EdgeClusterFrontend, ExecSyncParams
-from system_metrics import calculate_estimated_load
-import estimated_load_daemon
 from cognit_logger import setup_logging, get_logger
 
 one.ONE_XMLRPC = conf.ONE_XMLRPC
@@ -30,20 +26,7 @@ logger = get_logger(__name__)
 db = db_manager.DBManager(conf.DB_PATH, conf.DB_CLEANUP_DAYS)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Lifespan context manager for FastAPI startup/shutdown events."""
-    logger.info("Starting estimated load daemon background task")
-    task = asyncio.create_task(estimated_load_daemon.daemon_loop())
-    yield
-    task.cancel()
-    try:
-        await task
-    except asyncio.CancelledError:
-        logger.info("Estimated load daemon stopped")
-
-
-app = FastAPI(title='Cognit Frontend', version='0.1.0', lifespan=lifespan)
+app = FastAPI(title='Cognit Frontend', version='0.1.0')
 
 
 @app.get("/")
@@ -146,8 +129,6 @@ async def get_edge_cluster_frontends(
     elif not cached_device_assignment:
         logger.info("No cached device assignment found")
         device_count = db.get_distinct_device_count()
-        estimated_load = calculate_estimated_load(device_count)
-        logger.info(f"Estimated load calculated: {estimated_load:.2f} (device_count={device_count})")
         # Select the best cluster for this device based on requirements
         flavour = app_reqs['FLAVOUR']
         cluster_ids = one.clusters_ids_get(
@@ -167,7 +148,7 @@ async def get_edge_cluster_frontends(
 
         # Use the best (closest) cluster
         selected_cluster_id = cluster_ids[0]
-        db.insert_device_assignment(device_id, selected_cluster_id, flavour, id, app_reqs, estimated_load)
+        db.insert_device_assignment(device_id, selected_cluster_id, flavour, id, app_reqs)
         cluster = one.cluster_get(client, selected_cluster_id, flavour)
         return [cluster]
     else:
