@@ -57,15 +57,40 @@ class DBManager:
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
+            # Check if table exists and has the correct composite primary key
+            cursor.execute("""
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name='device_cluster_assignment'
+            """)
+            table_exists = cursor.fetchone() is not None
+
+            if table_exists:
+                # Check if the table has composite primary key by examining the schema
+                cursor.execute("PRAGMA table_info(device_cluster_assignment)")
+                columns = cursor.fetchall()
+                # Check if both device_id and flavour are part of primary key
+                # In PRAGMA table_info, pk column is 0 for non-pk, 1+ for pk columns
+                pk_columns = [col[1] for col in columns if col[5] > 0]  # col[5] is pk, col[1] is name
+                
+                if 'device_id' in pk_columns and 'flavour' in pk_columns and len(pk_columns) == 2:
+                    # Table already has correct composite primary key
+                    return
+                else:
+                    # Table exists but has wrong schema, drop and recreate
+                    logger.info("Table exists with old schema, recreating with composite primary key")
+                    cursor.execute("DROP TABLE device_cluster_assignment")
+
+            # Create table with composite primary key
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS device_cluster_assignment (
-                    device_id TEXT PRIMARY KEY,
+                CREATE TABLE device_cluster_assignment (
+                    device_id TEXT NOT NULL,
                     cluster_id INTEGER NOT NULL,
                     flavour TEXT NOT NULL,
                     last_seen TIMESTAMP NOT NULL,
                     app_req_id INTEGER NOT NULL,
                     app_req_json TEXT NOT NULL,
-                    estimated_load REAL DEFAULT 1.0
+                    estimated_load REAL DEFAULT 1.0,
+                    PRIMARY KEY (device_id, flavour)
                 )
             ''')
 
@@ -84,11 +109,12 @@ class DBManager:
                 if deleted_count > 0:
                     logger.info(f"Cleaned up {deleted_count} old device assignments (>{self.DB_CLEANUP_DAYS} days)")
 
-    def get_device_assignment(self, device_id: str) -> Optional[Dict[str, Any]]:
+    def get_device_assignment(self, device_id: str, flavour: str) -> Optional[Dict[str, Any]]:
         """Retrieve device cluster assignment from database.
 
         Args:
             device_id: The device identifier
+            flavour: The device flavour
 
         Returns:
             Dictionary with assignment data or None if not found
@@ -97,8 +123,8 @@ class DBManager:
             cursor = conn.cursor()
             cursor.execute(
                 'SELECT device_id, cluster_id, flavour, last_seen, app_req_id, app_req_json, estimated_load '
-                'FROM device_cluster_assignment WHERE device_id = ?',
-                (device_id,)
+                'FROM device_cluster_assignment WHERE device_id = ? AND flavour = ?',
+                (device_id, flavour)
             )
             row = cursor.fetchone()
 
@@ -172,36 +198,42 @@ class DBManager:
                 cursor.execute(
                     'UPDATE device_cluster_assignment '
                     'SET cluster_id = ?, flavour = ?, last_seen = ?, app_req_id = ?, app_req_json = ?'
-                    'WHERE device_id = ?',
-                    (cluster_id, flavour, now, app_req_id, app_req_json_str, device_id)
+                    'WHERE device_id = ? AND flavour = ?',
+                    (cluster_id, flavour, now, app_req_id, app_req_json_str, device_id, flavour)
                 )
 
 
-    def update_last_seen(self, device_id: str) -> None:
-        """Update last_seen timestamp for a device assignment."""
+    def update_last_seen(self, device_id: str, flavour: str) -> None:
+        """Update last_seen timestamp for a device assignment.
+        
+        Args:
+            device_id: The device identifier
+            flavour: The device flavour
+        """
         with self._write_lock:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 now = datetime.now().isoformat()
 
                 cursor.execute(
-                    'UPDATE device_cluster_assignment SET last_seen = ? WHERE device_id = ?',
-                    (now, device_id)
+                    'UPDATE device_cluster_assignment SET last_seen = ? WHERE device_id = ? AND flavour = ?',
+                    (now, device_id, flavour)
                 )
 
-    def update_estimated_load(self, device_id: str, estimated_load: float) -> None:
+    def update_estimated_load(self, device_id: str, flavour: str, estimated_load: float) -> None:
         """Update only estimated_load for a device assignment.
         
         Args:
             device_id: The device identifier
+            flavour: The device flavour
             estimated_load: New estimated load value
         """
         with self._write_lock:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'UPDATE device_cluster_assignment SET estimated_load = ? WHERE device_id = ?',
-                    (estimated_load, device_id)
+                    'UPDATE device_cluster_assignment SET estimated_load = ? WHERE device_id = ? AND flavour = ?',
+                    (estimated_load, device_id, flavour)
                 )
 
     def get_distinct_device_count(self) -> int:

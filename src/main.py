@@ -120,17 +120,16 @@ async def get_edge_cluster_frontends(
             clusters.append(one.cluster_get(client, cluster_id, flavour))
         return clusters
 
-    cached_device_assignment = db.get_device_assignment(device_id)
+    flavour = app_reqs['FLAVOUR']
+    cached_device_assignment = db.get_device_assignment(device_id, flavour)
     if cached_device_assignment and cached_device_assignment['app_req_json'] == app_reqs:
         logger.info("App requirements are the same as the cached ones")
-        db.update_last_seen(device_id)
+        db.update_last_seen(device_id, flavour)
         cluster = one.cluster_get(client, int(cached_device_assignment['cluster_id']), cached_device_assignment['flavour'])
         return [cluster]
     elif not cached_device_assignment:
         logger.info("No cached device assignment found")
-        device_count = db.get_distinct_device_count()
         # Select the best cluster for this device based on requirements
-        flavour = app_reqs['FLAVOUR']
         cluster_ids = one.clusters_ids_get(
             client,
             app_reqs['GEOLOCATION'],
@@ -154,7 +153,6 @@ async def get_edge_cluster_frontends(
     else:
         # App requirements changed, need to find a new cluster
         logger.info("App requirements changed, selecting new cluster")
-        flavour = app_reqs['FLAVOUR']
         cluster_ids = one.clusters_ids_get(
             client,
             app_reqs['GEOLOCATION'],

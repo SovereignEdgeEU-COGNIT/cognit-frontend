@@ -5,6 +5,7 @@ import threading
 import uuid
 from datetime import datetime, timedelta
 import pytest
+import sqlite3
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
@@ -43,8 +44,7 @@ def populate_test_data(db):
             device["cluster_id"],
             device["flavour"],
             device["app_req_id"],
-            app_reqs,
-            device["estimated_load"]
+            app_reqs
         )
     
     yield
@@ -97,7 +97,7 @@ class TestGetAllDeviceIds:
 
     def test_get_all_device_ids_distinct(self, db):
         device_id = "test_get_all_distinct"
-        db.insert_device_assignment(device_id, 0, "OVH", 1, {}, 1.0)
+        db.insert_device_assignment(device_id, 0, "OVH", 1, {})
         db.update_device_assignment(device_id, 1, "OVH", 2, {})
         
         device_ids = db.get_all_device_ids()
@@ -116,11 +116,11 @@ class TestDeviceCaching:
             "MAX_CAPACITY": "15"
         }
 
-        assert db.get_device_assignment(test_device_id) is None
+        assert db.get_device_assignment(test_device_id, app_reqs['FLAVOUR']) is None
 
-        db.insert_device_assignment(test_device_id, 5, app_reqs['FLAVOUR'], 123, app_reqs, 1.0)
+        db.insert_device_assignment(test_device_id, 5, app_reqs['FLAVOUR'], 123, app_reqs)
         
-        assignment = db.get_device_assignment(test_device_id)
+        assignment = db.get_device_assignment(test_device_id, app_reqs['FLAVOUR'])
         assert assignment is not None
         assert assignment['device_id'] == test_device_id
         assert assignment['cluster_id'] == 5
@@ -139,10 +139,10 @@ class TestDeviceCaching:
             "MAX_CAPACITY": "15"
         }
         
-        db.insert_device_assignment(test_device_id, 5, app_reqs['FLAVOUR'], 123, app_reqs, 1.0)
-        assignment_before = db.get_device_assignment(test_device_id)
-        db.update_last_seen(test_device_id)
-        assignment_after = db.get_device_assignment(test_device_id)
+        db.insert_device_assignment(test_device_id, 5, app_reqs['FLAVOUR'], 123, app_reqs)
+        assignment_before = db.get_device_assignment(test_device_id, app_reqs['FLAVOUR'])
+        db.update_last_seen(test_device_id, app_reqs['FLAVOUR'])
+        assignment_after = db.get_device_assignment(test_device_id, app_reqs['FLAVOUR'])
 
         assert assignment_after['device_id'] == assignment_before['device_id']
         assert assignment_after['cluster_id'] == assignment_before['cluster_id']
@@ -170,10 +170,10 @@ class TestDeviceCaching:
             "MAX_CAPACITY": "20"
         }
         
-        db.insert_device_assignment(test_device_id, 5, app_reqs_1['FLAVOUR'], 123, app_reqs_1, 1.0)
+        db.insert_device_assignment(test_device_id, 5, app_reqs_1['FLAVOUR'], 123, app_reqs_1)
         db.update_device_assignment(test_device_id, 7, app_reqs_2['FLAVOUR'], 456, app_reqs_2)
         
-        assignment = db.get_device_assignment(test_device_id)
+        assignment = db.get_device_assignment(test_device_id, app_reqs_2['FLAVOUR'])
         assert assignment['device_id'] == test_device_id
         assert assignment['cluster_id'] == 7
         assert assignment['app_req_id'] == 456
@@ -203,13 +203,13 @@ class TestDeviceCaching:
                 (recent_device, 1, "OVH", recent_timestamp, 1, "{}", 1.0)
             )
         
-        assert db.get_device_assignment(old_device) is not None
-        assert db.get_device_assignment(recent_device) is not None
+        assert db.get_device_assignment(old_device, "OVH") is not None
+        assert db.get_device_assignment(recent_device, "OVH") is not None
         
         db.cleanup_old_records()
         
-        assert db.get_device_assignment(old_device) is None
-        assert db.get_device_assignment(recent_device) is not None
+        assert db.get_device_assignment(old_device, "OVH") is None
+        assert db.get_device_assignment(recent_device, "OVH") is not None
 
 
 class TestDeviceCount:
@@ -221,7 +221,7 @@ class TestDeviceCount:
         test_devices = ["test_count_001", "test_count_002", "test_count_003"]
         
         for i, device_id in enumerate(test_devices):
-            db.insert_device_assignment(device_id, 0, "OVH", i+1, {}, 1.0)
+            db.insert_device_assignment(device_id, 0, "OVH", i+1, {})
         
         count = db.get_distinct_device_count()
         assert count >= 5 + len(test_devices)
@@ -229,11 +229,72 @@ class TestDeviceCount:
     def test_duplicate_counted_once(self, db):
         device_id = "test_count_004"
         
-        db.insert_device_assignment(device_id, 0, "OVH", 1, {}, 1.0)
+        db.insert_device_assignment(device_id, 0, "OVH", 1, {})
         initial_count = db.get_distinct_device_count()
         
         db.update_device_assignment(device_id, 1, "OVH", 2, {})
         updated_count = db.get_distinct_device_count()
         
         assert initial_count == updated_count
+
+
+class TestCompositePrimaryKey:
+    def test_duplicate_primary_key_raises_error(self, db):
+        """Test that inserting duplicate (device_id, flavour) raises IntegrityError."""
+        device_id = f"test_pk_{uuid.uuid4().hex[:8]}"
+        flavour = "OVH"
+        app_reqs = {"ID": device_id, "FLAVOUR": flavour}
+        
+        # First insert should succeed
+        db.insert_device_assignment(device_id, 1, flavour, 100, app_reqs)
+        
+        # Second insert with same (device_id, flavour) should raise IntegrityError
+        with pytest.raises(sqlite3.IntegrityError):
+            db.insert_device_assignment(device_id, 2, flavour, 200, app_reqs)
+    
+    def test_same_device_id_different_flavour_allowed(self, db):
+        """Test that same device_id with different flavour is allowed."""
+        device_id = f"test_pk_{uuid.uuid4().hex[:8]}"
+        flavour1 = "OVH"
+        flavour2 = "AWS"
+        
+        app_reqs1 = {"ID": device_id, "FLAVOUR": flavour1}
+        app_reqs2 = {"ID": device_id, "FLAVOUR": flavour2}
+        
+        # Both inserts should succeed
+        db.insert_device_assignment(device_id, 1, flavour1, 100, app_reqs1)
+        db.insert_device_assignment(device_id, 2, flavour2, 200, app_reqs2)
+        
+        # Both should be retrievable
+        assignment1 = db.get_device_assignment(device_id, flavour1)
+        assignment2 = db.get_device_assignment(device_id, flavour2)
+        
+        assert assignment1 is not None
+        assert assignment2 is not None
+        assert assignment1['flavour'] == flavour1
+        assert assignment2['flavour'] == flavour2
+        assert assignment1['cluster_id'] == 1
+        assert assignment2['cluster_id'] == 2
+    
+    def test_different_device_id_same_flavour_allowed(self, db):
+        """Test that different device_id with same flavour is allowed."""
+        device_id1 = f"test_pk_{uuid.uuid4().hex[:8]}"
+        device_id2 = f"test_pk_{uuid.uuid4().hex[:8]}"
+        flavour = "OVH"
+        
+        app_reqs1 = {"ID": device_id1, "FLAVOUR": flavour}
+        app_reqs2 = {"ID": device_id2, "FLAVOUR": flavour}
+        
+        # Both inserts should succeed
+        db.insert_device_assignment(device_id1, 1, flavour, 100, app_reqs1)
+        db.insert_device_assignment(device_id2, 2, flavour, 200, app_reqs2)
+        
+        # Both should be retrievable
+        assignment1 = db.get_device_assignment(device_id1, flavour)
+        assignment2 = db.get_device_assignment(device_id2, flavour)
+        
+        assert assignment1 is not None
+        assert assignment2 is not None
+        assert assignment1['device_id'] == device_id1
+        assert assignment2['device_id'] == device_id2
 
