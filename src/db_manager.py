@@ -259,3 +259,29 @@ class DBManager:
             cursor.execute('SELECT DISTINCT device_id FROM device_cluster_assignment')
             rows = cursor.fetchall()
             return [row[0] for row in rows] if rows else []
+
+    def get_all_device_assignments(self) -> List[Dict[str, Any]]:
+        """Get all device assignments from the database.
+        
+        Returns:
+            List of all device assignment dictionaries (empty list if no assignments)
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                'SELECT device_id, cluster_id, flavour, last_seen, app_req_id, app_req_json, estimated_load '
+                'FROM device_cluster_assignment'
+            )
+            rows = cursor.fetchall()
+            return [
+                {
+                    'device_id': row[0],
+                    'cluster_id': row[1],
+                    'flavour': row[2],
+                    'last_seen': row[3],
+                    'app_req_id': row[4],
+                    'app_req_json': json.loads(row[5]) if row[5] else {},
+                    'estimated_load': row[6]
+                }
+                for row in rows
+            ] if rows else []
