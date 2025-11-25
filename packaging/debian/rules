@@ -1,0 +1,49 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE=1
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Create Python virtual environment with dependencies
+	python3 -m venv debian/python-venv
+	debian/python-venv/bin/pip install --upgrade pip
+	debian/python-venv/bin/pip install -r requirements.txt
+
+override_dh_auto_install:
+	# Create installation directories
+	mkdir -p debian/opennebula-cognit-frontend/usr/lib/one/cognit-frontend
+	mkdir -p debian/opennebula-cognit-frontend/usr/share/one/cognit-frontend
+	mkdir -p debian/opennebula-cognit-frontend/etc/one
+	mkdir -p debian/opennebula-cognit-frontend/lib/systemd/system
+	mkdir -p debian/opennebula-cognit-frontend/etc/logrotate.d
+	
+	# Install Python source files
+	cp -a src/*.py debian/opennebula-cognit-frontend/usr/lib/one/cognit-frontend/
+	
+	# Install Python venv
+	cp -a debian/python-venv debian/opennebula-cognit-frontend/usr/share/one/cognit-frontend/python-venv
+	
+	# Install configuration
+	cp -a share/etc/cognit-frontend.conf debian/opennebula-cognit-frontend/etc/one/
+	
+	# Install systemd service
+	cp -a packaging/systemd/opennebula-cognit-frontend.service debian/opennebula-cognit-frontend/lib/systemd/system/
+	
+	# Install logrotate
+	cp -a packaging/logrotate/opennebula-cognit-frontend debian/opennebula-cognit-frontend/etc/logrotate.d/
+
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -rf debian/python-venv
+
+override_dh_installinit:
+	dh_installinit --name=opennebula-cognit-frontend
+
+override_dh_systemd_enable:
+	dh_systemd_enable --name=opennebula-cognit-frontend
+
+override_dh_systemd_start:
+	dh_systemd_start --name=opennebula-cognit-frontend
+

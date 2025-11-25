@@ -1,0 +1,20 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "purge" ]; then
+    # Remove configuration file on purge
+    rm -f /etc/one/cognit-frontend.conf 2>/dev/null || true
+    
+    # Remove application directories
+    rm -rf /usr/lib/one/cognit-frontend 2>/dev/null || true
+    rm -rf /usr/share/one/cognit-frontend 2>/dev/null || true
+fi
+
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+    # Reload systemd
+    systemctl daemon-reload 2>/dev/null || true
+fi
+
+#DEBHELPER#
+

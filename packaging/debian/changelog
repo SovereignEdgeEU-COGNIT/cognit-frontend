@@ -1,0 +1,9 @@
+opennebula-cognit-frontend (1.0.0-1) unstable; urgency=medium
+
+  * Initial release
+  * FastAPI-based COGNIT Frontend for OpenNebula
+  * Bundled Python virtual environment with all dependencies
+  * Systemd service integration with auto-start
+
+ -- OpenNebula Systems <contact@opennebula.io>  Tue, 25 Nov 2025 12:00:00 +0000
+

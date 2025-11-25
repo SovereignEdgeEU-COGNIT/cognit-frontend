@@ -1,0 +1,42 @@
+#!/bin/sh
+
+set -e
+
+ONE_USER=oneadmin
+ONE_GROUP=oneadmin
+
+if [ "$1" = "configure" ]; then
+    # Ensure /etc/one directory exists and has correct permissions
+    if [ -d /etc/one ]; then
+        chgrp "${ONE_GROUP}" /etc/one 2>/dev/null || true
+        chmod 0751 /etc/one 2>/dev/null || true
+    fi
+
+    # Fix permissions for configuration file
+    if [ -f /etc/one/cognit-frontend.conf ]; then
+        chown root:"${ONE_GROUP}" /etc/one/cognit-frontend.conf 2>/dev/null || true
+        chmod 0640 /etc/one/cognit-frontend.conf
+    fi
+
+    # Fix permissions for application directory
+    if [ -d /usr/lib/one/cognit-frontend ]; then
+        chown -R root:"${ONE_GROUP}" /usr/lib/one/cognit-frontend 2>/dev/null || true
+        chmod 0750 /usr/lib/one/cognit-frontend
+        find /usr/lib/one/cognit-frontend -type f -exec chmod 0640 {} \;
+        find /usr/lib/one/cognit-frontend -type f -name "*.py" -exec chmod 0750 {} \;
+    fi
+
+    # Fix permissions for venv directory
+    if [ -d /usr/share/one/cognit-frontend ]; then
+        chown -R root:"${ONE_GROUP}" /usr/share/one/cognit-frontend 2>/dev/null || true
+        chmod -R 0755 /usr/share/one/cognit-frontend
+    fi
+
+    # Reload systemd and enable/start the service
+    systemctl daemon-reload 2>/dev/null || true
+    systemctl enable opennebula-cognit-frontend 2>/dev/null || true
+    systemctl start opennebula-cognit-frontend 2>/dev/null || true
+fi
+
+#DEBHELPER#
+

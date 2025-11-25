@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
+    # Stop and disable the service before removal
+    if [ -d /run/systemd/system ]; then
+        systemctl stop opennebula-cognit-frontend 2>/dev/null || true
+        systemctl disable opennebula-cognit-frontend 2>/dev/null || true
+    fi
+fi
+
+#DEBHELPER#
+
