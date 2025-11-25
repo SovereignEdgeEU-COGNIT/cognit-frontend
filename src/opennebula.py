@@ -80,7 +80,7 @@ def clusters_ids_get(
     geolocation: str,
     flavour: str,
     is_confidential: str | None = None,
-    providers: str | None = None,
+    provider: str | None = None,
     target_cardinality: str | None = None,
 ) -> list[int]:
     """Return cluster IDs sorted by distance and filtered by optional capabilities.
@@ -90,7 +90,7 @@ def clusters_ids_get(
         geolocation: Device coordinates formatted as "lat,lon".
         flavour: Requested runtime flavour.
         is_confidential: String "true"/"false" indicating if only confidential clusters should be considered.
-        providers: String representation of list of acceptable provider identifiers.
+        provider: String representation of list of acceptable provider identifiers.
         target_cardinality: String representation of target cardinality of the cluster.
 
     Returns:
@@ -106,15 +106,15 @@ def clusters_ids_get(
         requested_is_confidential = is_confidential.lower() == "true"
 
     requested_providers = set()
-    if providers:
+    if provider:
         try:
             # Parse string representation of list like "['provider_1']"
-            parsed_providers = ast.literal_eval(providers)
+            parsed_providers = ast.literal_eval(provider)
             if isinstance(parsed_providers, list):
                 requested_providers = set(parsed_providers)
         except (ValueError, SyntaxError):
             # If parsing fails, treat as comma-separated string
-            requested_providers = set(p.strip() for p in providers.split(",") if p.strip())
+            requested_providers = set(p.strip() for p in provider.split(",") if p.strip())
 
     requested_target_cardinality = None
     if target_cardinality:
@@ -140,7 +140,7 @@ def clusters_ids_get(
                     continue
 
         if requested_providers:
-            cluster_providers = template.get("PROVIDERS", "").split(",")
+            cluster_providers = template.get("PROVIDER", "").split(",")
             if set(cluster_providers).isdisjoint(requested_providers):
                 continue
 

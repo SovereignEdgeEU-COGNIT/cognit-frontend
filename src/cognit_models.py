@@ -6,7 +6,7 @@ DESCRIPTIONS = {
     'app_requirement': {
         'id': "Unique identifier of the scheduling requirements",
         'is_confidential': "Indicates if the following function offloading requires Confidential Computing",
-        'providers': "Restricts the provider cluster to specific providers",
+        'provider': "Restricts the provider cluster to specific providers",
         'latency': "Maximum latency in milliseconds",
         'exec_time': "Max execution time allowed for the function to execute",
         'energy': "Minimum energy renewable percentage",
@@ -40,9 +40,9 @@ class AppRequirements(BaseModel):
     IS_CONFIDENTIAL: Optional[bool] = Field(
         default=False,
         description=DESCRIPTIONS['app_requirement']['is_confidential'])
-    PROVIDERS: Optional[list[str]] = Field(
+    PROVIDER: Optional[list[str]] = Field(
         default=None,
-        description=DESCRIPTIONS['app_requirement']['providers'])
+        description=DESCRIPTIONS['app_requirement']['provider'])
     FLAVOUR: str = Field(
         default="Nature",
         description=DESCRIPTIONS['app_requirement']['flavour'])
