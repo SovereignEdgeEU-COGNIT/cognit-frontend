@@ -2,7 +2,40 @@
 
 The COGNIT Frontend  is a software component that acts as the single point of contact for any Application Device Runtime that requests access to the COGNIT Framework to  offload computation through the FaaS paradigm.
 
-## Install
+## Debian Package
+
+### Build
+
+```bash
+cd /path/to/cognit-frontend
+ln -sf packaging/debian debian
+dpkg-buildpackage -us -uc -b
+```
+
+Output: `../opennebula-cognit-frontend_1.0.0-1_all.deb`
+
+### Install
+
+```bash
+dpkg -i opennebula-cognit-frontend_1.0.0-1_all.deb
+```
+
+Service starts automatically on port `1338`.
+
+### Verify
+
+```bash
+systemctl status opennebula-cognit-frontend
+curl http://localhost:1338/openapi.json
+```
+
+### Remove
+
+```bash
+dpkg --purge opennebula-cognit-frontend
+```
+
+## Install (Manual)
 
 The Application needs to reach the OpenNebula [XMLRPC endpoint](https://docs.opennebula.io/6.8/installation_and_configuration/opennebula_services/oned.html#xml-rpc-server-configuration) and the [ai orchestrator API](https://github.com/SovereignEdgeEU-COGNIT/ai-orchestrator). Configure options at [/etc/cognit-frontend.conf](/share/etc/cognit-frontend.conf).
 
