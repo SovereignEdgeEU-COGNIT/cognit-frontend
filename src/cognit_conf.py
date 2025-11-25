@@ -100,15 +100,21 @@ DB_CONFIG = {
 }
 
 # FaaS metrics to collect (using MetricAttributes format)
-from pyoneai.core import Float, MetricAttributes, MetricType
-
-FAAS_METRICS = {
-    'cpu': MetricAttributes(
-        name='cpu',
-        type=MetricType.GAUGE,
-        dtype=Float(),
-    ),
-}
+# pyoneai is optional - only needed for advanced monitoring features
+try:
+    from pyoneai.core import Float, MetricAttributes, MetricType
+    FAAS_METRICS = {
+        'cpu': MetricAttributes(
+            name='cpu',
+            type=MetricType.GAUGE,
+            dtype=Float(),
+        ),
+    }
+    PYONEAI_AVAILABLE = True
+except ImportError:
+    FAAS_METRICS = {}
+    PYONEAI_AVAILABLE = False
+    print("Warning: pyoneai not available - advanced monitoring features disabled")
 
 # XPath mappings for custom metrics (if needed)
 METRIC_XPATH_MAPPING = {
