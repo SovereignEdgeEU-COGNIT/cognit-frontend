@@ -112,7 +112,7 @@ async def get_edge_cluster_frontends(
             app_reqs['GEOLOCATION'],
             flavour,
             app_reqs.get('IS_CONFIDENTIAL'),
-            app_reqs.get('PROVIDER'),
+            app_reqs.get('PROVIDERS'),
             app_reqs.get('MAX_CAPACITY'),
         )
         clusters = []
@@ -135,7 +135,7 @@ async def get_edge_cluster_frontends(
             app_reqs['GEOLOCATION'],
             flavour,
             app_reqs.get('IS_CONFIDENTIAL'),
-            app_reqs.get('PROVIDER')
+            app_reqs.get('PROVIDERS')
         )
 
         if not cluster_ids:
@@ -158,7 +158,7 @@ async def get_edge_cluster_frontends(
             app_reqs['GEOLOCATION'],
             flavour,
             app_reqs.get('IS_CONFIDENTIAL'),
-            app_reqs.get('PROVIDER')
+            app_reqs.get('PROVIDERS')
         )
 
         if not cluster_ids:

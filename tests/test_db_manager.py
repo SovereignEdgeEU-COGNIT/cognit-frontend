@@ -36,7 +36,7 @@ def populate_test_data(db):
             "FLAVOUR": device["flavour"],
             "GEOLOCATION": "43.05,-2.53",
             "IS_CONFIDENTIAL": "false",
-            "PROVIDER": "provider_1",
+            "PROVIDERS": "provider_1",
             "MAX_CAPACITY": "10"
         }
         db.insert_device_assignment(
@@ -112,7 +112,7 @@ class TestDeviceCaching:
             "FLAVOUR": "TestOVH",
             "GEOLOCATION": "43.05,-2.53",
             "IS_CONFIDENTIAL": "false",
-            "PROVIDER": "provider_1,provider_2",
+            "PROVIDERS": "provider_1,provider_2",
             "MAX_CAPACITY": "15"
         }
 
@@ -135,7 +135,7 @@ class TestDeviceCaching:
             "FLAVOUR": "TestOVH",
             "GEOLOCATION": "43.05,-2.53",
             "IS_CONFIDENTIAL": "false",
-            "PROVIDER": "provider_1,provider_2",
+            "PROVIDERS": "provider_1,provider_2",
             "MAX_CAPACITY": "15"
         }
         
@@ -158,7 +158,7 @@ class TestDeviceCaching:
             "FLAVOUR": "TestOVH",
             "GEOLOCATION": "43.05,-2.53",
             "IS_CONFIDENTIAL": "false",
-            "PROVIDER": "provider_1,provider_2",
+            "PROVIDERS": "provider_1,provider_2",
             "MAX_CAPACITY": "15"
         }
         app_reqs_2 = {
@@ -166,7 +166,7 @@ class TestDeviceCaching:
             "FLAVOUR": "TestOVH",
             "GEOLOCATION": "43.05,-2.53",
             "IS_CONFIDENTIAL": "true",
-            "PROVIDER": "provider_3",
+            "PROVIDERS": "provider_3",
             "MAX_CAPACITY": "20"
         }
         

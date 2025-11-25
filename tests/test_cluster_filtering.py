@@ -22,7 +22,7 @@ def create_mock_clusters():
         "FLAVOURS": "TestOVH",
         "GEOLOCATION": "43.05,-2.53",  # Spain - 0km from device
         "IS_CONFIDENTIAL": "false",
-        "PROVIDER": "provider_1,provider_2",
+        "PROVIDERS": "provider_1,provider_2",
         "MAX_CAPACITY": "15"
     }
     clusters.append(c1)
@@ -34,7 +34,7 @@ def create_mock_clusters():
         "FLAVOURS": "TestOVH",
         "GEOLOCATION": "59.3294,18.0687",  # Stockholm - 2290km from device
         "IS_CONFIDENTIAL": "true",
-        "PROVIDER": "provider_3",
+        "PROVIDERS": "provider_3",
         "MAX_CAPACITY": "25"
     }
     clusters.append(c2)
@@ -46,7 +46,7 @@ def create_mock_clusters():
         "FLAVOURS": "TestOVH",
         "GEOLOCATION": "48.8566,2.3522",
         "IS_CONFIDENTIAL": "false",
-        "PROVIDER": "provider_1",
+        "PROVIDERS": "provider_1",
         "MAX_CAPACITY": "10"
     }
     clusters.append(c3)
@@ -75,7 +75,7 @@ def test_no_filters():
         geolocation="43.05,-2.53",  # Near cluster 1
         flavour="TestOVH",
         is_confidential=None,
-        provider=None,
+        providers=None,
         target_cardinality=None
     )
 
@@ -93,7 +93,7 @@ def test_confidential_filter():
         geolocation="43.05,-2.53",
         flavour="TestOVH",
         is_confidential="True",
-        provider=None,
+        providers=None,
         target_cardinality=None
     )
 
@@ -111,7 +111,7 @@ def test_non_confidential_filter():
         geolocation="43.05,-2.53",
         flavour="TestOVH",
         is_confidential="False",
-        provider=None,
+        providers=None,
         target_cardinality=None
     )
 
@@ -129,7 +129,7 @@ def test_provider_filter():
         geolocation="43.05,-2.53",
         flavour="TestOVH",
         is_confidential=None,
-        provider="['provider_1']",  # String representation of list
+        providers="['provider_1']",  # String representation of list
         target_cardinality=None
     )
 
@@ -147,7 +147,7 @@ def test_capacity_filter():
         geolocation="43.05,-2.53",
         flavour="TestOVH",
         is_confidential=None,
-        provider=None,
+        providers=None,
         target_cardinality="20"
     )
 
@@ -165,7 +165,7 @@ def test_combined_filters():
         geolocation="43.05,-2.53",
         flavour="TestOVH",
         is_confidential="False",
-        provider="['provider_1']",
+        providers="['provider_1']",
         target_cardinality="12"
     )
 
@@ -183,7 +183,7 @@ def test_wrong_flavour():
         geolocation="43.05,-2.53",
         flavour="Nature",
         is_confidential=None,
-        provider=None,
+        providers=None,
         target_cardinality=None
     )
 
