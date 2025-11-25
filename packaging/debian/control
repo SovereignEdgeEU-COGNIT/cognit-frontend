@@ -12,8 +12,7 @@ Homepage: https://github.com/SovereignEdgeEU-COGNIT/cognit-frontend
 
 Package: opennebula-cognit-frontend
 Architecture: all
-Pre-Depends: opennebula-common
-Depends: python3 (>= 3.11),
+Depends: python3 (>= 3.10),
          ${misc:Depends}
 Description: OpenNebula COGNIT Frontend API server
  The COGNIT Frontend is a software component that acts as the single point
