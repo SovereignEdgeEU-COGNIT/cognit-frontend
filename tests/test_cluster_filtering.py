@@ -15,38 +15,38 @@ def create_mock_clusters():
     """Create mock clusters with different attributes for testing."""
     clusters = []
 
-    # Cluster 1: Non-confidential, multiple providers, medium capacity (Spain - same as device)
+    # Cluster 1: Non-confidential, provider_1, medium capacity (Spain - same as device)
     c1 = Mock()
     c1.ID = 1
     c1.TEMPLATE = {
         "FLAVOURS": "TestOVH",
         "GEOLOCATION": "43.05,-2.53",  # Spain - 0km from device
         "IS_CONFIDENTIAL": "false",
-        "PROVIDERS": "provider_1,provider_2",
+        "PROVIDER": "provider_1",
         "MAX_CAPACITY": "15"
     }
     clusters.append(c1)
 
-    # Cluster 2: Confidential, different provider, high capacity (Stockholm - farthest)
+    # Cluster 2: Confidential, provider_3, high capacity (Stockholm - farthest)
     c2 = Mock()
     c2.ID = 2
     c2.TEMPLATE = {
         "FLAVOURS": "TestOVH",
         "GEOLOCATION": "59.3294,18.0687",  # Stockholm - 2290km from device
         "IS_CONFIDENTIAL": "true",
-        "PROVIDERS": "provider_3",
+        "PROVIDER": "provider_3",
         "MAX_CAPACITY": "25"
     }
     clusters.append(c2)
 
-    # Cluster 3: Non-confidential, single provider, low capacity (Paris - medium distance)
+    # Cluster 3: Non-confidential, provider_1, low capacity (Paris - medium distance)
     c3 = Mock()
     c3.ID = 3
     c3.TEMPLATE = {
         "FLAVOURS": "TestOVH",
         "GEOLOCATION": "48.8566,2.3522",
         "IS_CONFIDENTIAL": "false",
-        "PROVIDERS": "provider_1",
+        "PROVIDER": "provider_1",
         "MAX_CAPACITY": "10"
     }
     clusters.append(c3)

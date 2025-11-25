@@ -140,8 +140,8 @@ def clusters_ids_get(
                     continue
 
         if requested_providers:
-            cluster_providers = template.get("PROVIDERS", "").split(",")
-            if set(cluster_providers).isdisjoint(requested_providers):
+            cluster_provider = template.get("PROVIDER", "")
+            if cluster_provider not in requested_providers:
                 continue
 
         if requested_target_cardinality is not None:
