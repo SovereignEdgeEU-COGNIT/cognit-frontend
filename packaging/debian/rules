@@ -10,6 +10,8 @@ override_dh_auto_build:
 	python3 -m venv debian/python-venv
 	debian/python-venv/bin/pip install --upgrade pip
 	debian/python-venv/bin/pip install -r requirements.txt
+	# Install vendored pyoneai package
+	debian/python-venv/bin/pip install ./vendor-pyoneai/
 
 override_dh_auto_install:
 	# Create installation directories

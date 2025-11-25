@@ -1,0 +1,2 @@
+recursive-include monitoring/data *.db
+recursive-include monitoring *.py
