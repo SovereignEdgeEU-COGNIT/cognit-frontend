@@ -80,7 +80,7 @@ def clusters_ids_get(
     geolocation: str,
     flavour: str,
     is_confidential: str | None = None,
-    providers: str | None = None,
+    providers: str | list[str] | None = None,
     target_cardinality: str | None = None,
 ) -> list[int]:
     """Return cluster IDs sorted by distance and filtered by optional capabilities.
@@ -90,7 +90,7 @@ def clusters_ids_get(
         geolocation: Device coordinates formatted as "lat,lon".
         flavour: Requested runtime flavour.
         is_confidential: String "true"/"false" indicating if only confidential clusters should be considered.
-        providers: String representation of list of acceptable provider identifiers.
+        providers: List of acceptable provider identifiers, or string representation of list.
         target_cardinality: String representation of target cardinality of the cluster.
 
     Returns:
@@ -107,14 +107,18 @@ def clusters_ids_get(
 
     requested_providers = set()
     if providers:
-        try:
-            # Parse string representation of list like "['provider_1']"
-            parsed_providers = ast.literal_eval(providers)
-            if isinstance(parsed_providers, list):
-                requested_providers = set(parsed_providers)
-        except (ValueError, SyntaxError):
-            # If parsing fails, treat as comma-separated string
-            requested_providers = set(p.strip() for p in providers.split(",") if p.strip())
+        # Handle both list objects and string representations
+        if isinstance(providers, list):
+            requested_providers = set(providers)
+        elif isinstance(providers, str):
+            try:
+                # Parse string representation of list like "['provider_1']"
+                parsed_providers = ast.literal_eval(providers)
+                if isinstance(parsed_providers, list):
+                    requested_providers = set(parsed_providers)
+            except (ValueError, SyntaxError):
+                # If parsing fails, treat as comma-separated string
+                requested_providers = set(p.strip() for p in providers.split(",") if p.strip())
 
     requested_target_cardinality = None
     if target_cardinality:
