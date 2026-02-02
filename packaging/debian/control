@@ -1,0 +1,24 @@
+Source: opennebula-cognit-frontend
+Section: utils
+Priority: optional
+Maintainer: OpenNebula Systems <contact@opennebula.io>
+Build-Depends: debhelper (>= 10),
+               dh-python,
+               python3,
+               python3-venv,
+               python3-pip
+Standards-Version: 4.5.0
+Homepage: https://github.com/SovereignEdgeEU-COGNIT/cognit-frontend
+
+Package: opennebula-cognit-frontend
+Architecture: all
+Depends: python3 (>= 3.10),
+         ${misc:Depends}
+Description: OpenNebula COGNIT Frontend API server
+ The COGNIT Frontend is a software component that acts as the single point
+ of contact for any Application Device Runtime that requests access to the
+ COGNIT Framework to offload computation through the FaaS paradigm.
+ .
+ This package includes a bundled Python virtual environment with all
+ required dependencies.
+

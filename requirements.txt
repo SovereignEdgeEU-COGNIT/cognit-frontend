@@ -28,4 +28,5 @@ xmltodict==0.13.0
 pytest==8.4.2
 numpy==1.26.4
 PyMySQL==1.1.2
--e git+https://github.com/OpenNebula/one-aiops.git@b05fa36fcc424208360f0bd7cc756a162be17728#egg=pyoneai&subdirectory=sdk
+scipy
+# pyoneai is installed from vendor-pyoneai/ directory

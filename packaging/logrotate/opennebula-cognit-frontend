@@ -1,0 +1,13 @@
+/var/log/one/cognit-frontend.log {
+    weekly
+    rotate 4
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 640 oneadmin oneadmin
+    postrotate
+        systemctl reload opennebula-cognit-frontend > /dev/null 2>&1 || true
+    endscript
+}
+
